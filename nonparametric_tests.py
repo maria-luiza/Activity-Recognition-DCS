@@ -38,7 +38,7 @@ def friedman_test(*args):
     rankings = []
     for i in range(n):
         row = [col[i] for col in args]
-        row_sort = sorted(row)
+        row_sort = sorted(row, reverse=True)
         rankings.append([row_sort.index(v) + 1 + (row_sort.count(v)-1)/2. for v in row])
     #print rankings
     rankings_avg = [sp.mean([case[j] for case in rankings]) for j in range(k)]

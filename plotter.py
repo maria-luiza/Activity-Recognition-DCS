@@ -16,76 +16,6 @@ from scipy.stats import wilcoxon
 import numpy as np
 
 
-def plot_confusion_matrix(cm,
-                          target_names,
-                          title = 'Confusion matrix',
-                          cmap = None,
-                          normalize = True):
-    """
-    given a sklearn confusion matrix (cm), make a nice plot
-
-    Arguments
-    ---------
-    cm:           confusion matrix from sklearn.metrics.confusion_matrix
-
-    target_names: given classification classes such as [0, 1, 2]
-                  the class names, for example: ['high', 'medium', 'low']
-
-    title:        the text to display at the top of the matrix
-
-    cmap:         the gradient of the values displayed from matplotlib.pyplot.cm
-                  see http://matplotlib.org/examples/color/colormaps_reference.html
-                  plt.get_cmap('jet') or plt.cm.Blues
-
-    normalize:    If False, plot the raw numbers
-                  If True, plot the proportions
-
-    Usage
-    -----
-    plot_confusion_matrix(cm           = cm,                  # confusion matrix created by
-                                                              # sklearn.metrics.confusion_matrix
-                          normalize    = True,                # show proportions
-                          target_names = y_labels_vals,       # list of names of the classes
-                          title        = best_estimator_name) # title of graph
-
-    Citiation
-    ---------
-    http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
-
-    """
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import itertools
-
-    output_path = os.path.dirname(__file__) + '/Graphs/' + title.split("__")[0] + "/"
-
-    accuracy = np.trace(cm) / float(np.sum(cm))
-    misclass = 1 - accuracy
-
-    if cmap is None:
-        cmap = plt.get_cmap('Blues')
-
-    plt.figure(figsize=(8, 6))
-
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-
-    thresh = cm.max() / 1.5 if normalize else cm.max() / 2
-
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-
-    if target_names is not None:
-        tick_marks = np.arange(len(target_names))
-        plt.xticks(tick_marks, target_names, rotation=45)
-        plt.yticks(tick_marks, target_names)
-
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label\naccuracy = {:0.4f}; misclass = {:0.4f}'.format(accuracy, misclass))
-    save_pdf(plt, output_path, "Confusion_Matrix__" + title)
-
 def save_pdf(plot, path, name):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -97,16 +27,17 @@ def save_pdf(plot, path, name):
         plot.close()
 
 
-def plot_technique(gen_methods, dataset, metric, technique):
+def plot_technique(gen_methods, dataset, metric, techniques):
     noise_params = ['00', '10', '20', '30', '40', '50']
     output_path = os.path.dirname(__file__) + '/Graphs/' + dataset + "/"
     markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8']
     colors = ['blue', 'lightcoral', 'seagreen', 'crimson', 'maroon', 'orangered', 'tomato', 'sienna']
 
     df_l = []
+    # for technique in techniques:
     for gen in gen_methods:
-        df = read_mean_results(gen, dataset, noise_params, metric, [technique])
-        df.columns = [technique + "_" + gen] 
+        df, std = read_mean_results(gen, dataset, noise_params, metric, techniques)
+        df.columns = [techniques[0] + "_" + gen] + techniques[1:]
         df_l.append(df)
     
     mean_techn = pd.concat(df_l, axis=1)
@@ -122,13 +53,13 @@ def plot_technique(gen_methods, dataset, metric, technique):
     legend_font.set_size(8)
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=4, fancybox=False, shadow=False, prop=legend_font)
 
-    plt.ylim(0, 100)
+    plt.ylim(30, 101)
     plt.ylabel(metric)
     plt.xlabel('Noise per rate (%)')
     plt.title(dataset)
 
     plt.grid()
-    save_pdf(plt, output_path, technique + "_" + metric)
+    save_pdf(plt, output_path, '_'.join(techniques) + "_" + metric)
 
 
 def plot_results(gen, dataset, metric, techniques):
@@ -137,7 +68,7 @@ def plot_results(gen, dataset, metric, techniques):
     markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8']
     colors = ['0.4', '0.6', 'lightcoral', 'red', 'crimson', 'maroon', 'orangered', 'tomato', 'sienna']
 
-    mean_accuracies = read_mean_results(gen, dataset, noise_params, metric, techniques)
+    mean_accuracies, std_acc = read_mean_results(gen, dataset, noise_params, metric, techniques)
     for i, column in enumerate(mean_accuracies):
         if i < 4:
             plt.plot(noise_params, mean_accuracies[column], colors[i], label=column, marker=markers[i],
@@ -152,8 +83,6 @@ def plot_results(gen, dataset, metric, techniques):
     plt.ylim(0, 100)
     plt.ylabel(metric)
     plt.xlabel('Noise per rate (%)')
-
-    plt.grid()
     save_pdf(plt, output_path, dataset + "_" + metric)
 
 def plot_free_noise(datasets, metric, techniques):
@@ -167,28 +96,29 @@ def plot_free_noise(datasets, metric, techniques):
         means.append(mean_accuracies)
     
     df_means = pd.concat(means)
-    ax = df_means.plot(kind = "bar", grid = True)
+    ax = df_means.plot(kind="bar", grid=True)
     
     ax.set_xlabel('Datasets')
     ax.set_ylabel(metric)
     ax.set_xticklabels(datasets, rotation = 45)
     plt.ylim(min(df_means.apply(lambda x: min(x))) - 10,100)
 
-    plt.legend(loc = 'upper center', bbox_to_anchor = (0.5, 1.1), fancybox = True, ncol = 6)
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), fancybox=True, ncol=6)
     save_pdf(plt, output_path, "Free_noise_" + metric)
 
 def plot_nemenyi(ranks, techniques, noise):
-    cd = compute_CD(ranks, 45)
-    graph_ranks(ranks, techniques, cd = cd, width = 6, textspace = 1.5)
-
+    cd = compute_CD(ranks, 30, alpha="0.05")
+    print(cd)
+    graph_ranks(ranks, techniques, cd=cd, width=len(techniques), textspace=1.5)
     save_pdf(plt, os.path.dirname(__file__) + '/Graphs/', 'Nemenyi_' + noise)
 
 if __name__ == '__main__':
     datasets    = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
-    metrics     = ['Accuracy', 'Precision', 'Recall', 'F1']
-    techniques  = ['Oracle', 'OLA', 'LCA', 'MLA', 'Rank', 'KNORAE', 'KNORAU', 'DESKNN', 'Random Forest']
-    gen_methods = ['SGH', 'AdaBoostClassifier', 'BaggingClassifier']
-    tableLatex  = open("tableLatex.txt", 'w')
+    metrics = ["Accuracy"]
+    techniques = ['OLA', 'LCA', 'Rank', 'MCB', 'Random Forest']
+    # gen_methods = ['AdaBoostClassifier','BaggingClassifier','SGH']
+    gen_methods = ['SGH']
+    # tableLatex  = open("tableLatex.txt", 'w')
 
     friedmanT  = {'00': [],
                   '10': [],
@@ -197,41 +127,50 @@ if __name__ == '__main__':
                   '40': [],
                   '50': []}
     
+    data_sets = dict((k, friedmanT) for k in datasets)
+    # table_latex = []
+
     for gen in gen_methods:
+        print("################ Generation >>>> {} <<<< #################".format(gen))
         for metric in metrics:
             for dataset in datasets:
-                mean_accuracies = read_mean_results(gen, dataset, ['00', '10', '20', '30', '40', '50'], metric, techniques)
-                tableLatex.write(mean_accuracies.to_latex())
+                mean_accuracies, std_accuracies = read_mean_results(gen, dataset, ['00', '10', '20', '30', '40', '50'], metric, techniques)
 
-                plot_results(gen, dataset, metric, techniques)
-    
-    for metric in metrics:
-        for dataset in datasets:
-            print("Dataset: ", dataset)
-            plot_technique(gen_methods, dataset, metric, "Oracle")
-    
-        #     if metric == 'Accuracy':
-        #         for key in friedmanT:
-        #             mean = []
-        #             for tech in techniques:
-        #                 mean.append(mean_accuracies.loc[key, tech])
+                print("############# Database >>>> {} <<<< ##############".format(dataset))
+                # print(mean_accuracies.T)
 
-        #             friedmanT[key].append(mean)
+                acc_pd = pd.DataFrame(index = ['00', '10', '20', '30', '40', '50'], columns = mean_accuracies.columns)
+                acc_pd = mean_accuracies.astype(str) + '$\pm$' + '(' + std_accuracies.astype(str) + ')'
+                
+                # table_latex.append(acc_pd)
+                
+                if metric == "Accuracy":
+                    dictionary = mean_accuracies.to_dict(orient='index')
+                    d = {}
+                    for k in dictionary:
+                        d[k] = [dictionary[k][column_name] for column_name in mean_accuracies.columns]
 
-        # for key, value in friedmanT.items():
-        #     value = list(zip(*value))
-        #     Fvalue, pvalue, ranks, pivots = friedman_test(value[0], value[1], value[2], value[3], value[4], value[5])
-        #     plot_nemenyi(ranks, techniques, key)
+                    data_sets[dataset] = d
 
+                # plot_technique(gen_methods, dataset, metric, ['Oracle'])
+                # plot_results(gen, dataset, metric, techniques)
+
+    # accs = pd.concat(table_latex, keys=datasets, axis=0)
+    # tableLatex.write(accs.to_latex())
+
+
+    for dataset in datasets:
+        for key in friedmanT:
+            friedmanT[key].append(data_sets[dataset][key])
+
+    for key, value in friedmanT.items():
+        value = list(zip(*value))
+        Fvalue, pvalue, ranks, pivots = friedman_test(value[0], #OLA
+                                                      value[1], #LCA
+                                                      value[2], #RANK
+                                                      value[3], #MCB
+                                                      value[4]  #Random Forest
+                                                    )
+        
+        plot_nemenyi(ranks, techniques, key)
         # plot_free_noise(datasets, metric, techniques)
-
-    # sufix = ['_by_class_Noise_00', '_by_class_Noise_10', '_by_class_Noise_20',
-    #          '_by_class_Noise_30', '_by_class_Noise_40', '_by_class_Noise_50']
-
-    # for classes in sufix:
-    #     for dataset in datasets:
-    #         excel_names = ['Results/' + dataset + "/" + tech + classes + '.csv' for tech in techniques]
-    #         excels      = [pd.read_csv(name, header = 0) for name in excel_names]
-    #         excels      = [excel.loc[[len(excel)]] for excel in excels]
-            # combined    = pd.concat(excels)
-            # combined.to_csv('Graphs/Class/' + dataset + classes + '.csv', encoding = 'utf-8')

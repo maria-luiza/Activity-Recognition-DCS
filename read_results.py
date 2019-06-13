@@ -14,12 +14,15 @@ def read_mean_results(gen, dataset, noise_params, metric, techniques):
             acc                                     = read_accuracies(gen, dataset, technic, noise)
 
             if technic == "Random Forest" and metric != "Accuracy":
-                mean_accuracies.loc[noise, technic]     = round(acc.loc['Mean', metric + " Micro"]*100, 2)
+                mean_accuracies.loc[noise, technic]    = round(acc.loc['Mean', metric + " Micro"]*100, 2)
+                std_dev_accuracies.loc[noise, technic] = round(np.std(acc[metric + ' Micro'])*100, 2)
+
             else:
-                mean_accuracies.loc[noise, technic]     = round(acc.loc['Mean', metric]*100, 2)
+                mean_accuracies.loc[noise, technic]    = round(acc.loc['Mean', metric]*100, 2)
+                std_dev_accuracies.loc[noise, technic] = round(np.std(acc[metric])*100, 2)
 
     mean_accuracies.index = noise_params
-    return mean_accuracies
+    return mean_accuracies, std_dev_accuracies
 
 def read_accuracies(gen, dataset, technic, noise):
     return pd.read_csv(input_path + gen + '/' + dataset + '/' + technic +'_Noise_' + noise + '.csv', index_col = 0, header = 0)
@@ -36,10 +39,8 @@ def read_mean_results_per_noise(noise, techniques):
     mean_accuracies.index = techniques
     return mean_accuracies, std_dev_accuracies
 
-
 def read_folds_accuracies(dataset, technic, noise):
     return read_accuracies(dataset, technic, noise)['General accuracy'][0: -1]
-
 
 def read_folds_results_per_noise(noise):
     accuracies = pd.DataFrame(columns=techniques)

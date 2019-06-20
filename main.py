@@ -156,7 +156,7 @@ if __name__ == '__main__':
     # ds_methods  = [OLA, LCA, MLA, Rank, MCB]
     gen_methods = [SGH]
     # datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
-    datasets = ['HH124']
+    datasets = ['Kyoto2008']
 
     for dataset in datasets:
         for ds_method in ds_methods:

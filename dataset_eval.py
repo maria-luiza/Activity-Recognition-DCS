@@ -5,38 +5,91 @@ import read_results
 import itertools
 from plotter import save_pdf
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 noise_params = ['00', '10', '20', '30', '40', '50']
 output_path = os.path.dirname(__file__) + '/Graphs/'
+input_path = os.path.dirname(__file__) + '/Results/'
 markers = ['o-', 's-', '^-', 'd-', '*-', 'X-', 'D-', 'P-', '8-']
 
-def plot_contourn():
-    pass
 
-def plot_roc(dict_data, datasets):
-    df = pd.DataFrame.from_dict(dict_data, orient='columns')
+def combination_columns(columns, n):
+    col_combinations = list(itertools.combinations(columns, n))
+    return list(map(list, col_combinations))
 
-    df.plot(kind='line', grid=True, style=markers)
 
-    plt.ylim(0, 100)
-    plt.ylabel('Match (%)')
-    plt.xlabel('Noise per rate (%)')
-    save_pdf(plt, output_path, 'ROC_datasets')
+def class_per_noise_technique(gen, dataset, technique):
+    path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
+    data_noises = pd.DataFrame(columns = noise_params)
 
-def plot_heatmap(dataset, df):
+    print(">>>>>> " + technique + " <<<<<<<")
 
-    fig, axes = plt.subplots(nrows=2, ncols=3)
-    fig.subplots_adjust(hspace=0.5)
-    fig.suptitle(dataset)
+    #Read the csv according to technique
+    for noise in noise_params:
+        data = pd.read_csv(path_data+noise+".csv")
+        data.drop(data.columns[0], axis=1, inplace=True)
+        
+        class_count = data.groupby("Predictions").size().reset_index(name='Counts')
 
-    for ax, noise in zip(axes.flatten(), df):
-        heat = df[noise]
-        ax.set_title(str(noise)+"%")
-        sns.heatmap(heat, ax=ax, linewidths=0.5, fmt="d")
+        class_match = data.groupby(["Predictions", "Target"]).size().reset_index(name = "Match")
+        class_match = class_match[(class_match["Predictions"] == class_match["Target"])].reset_index(drop=True)
+        
+        percentage_class = (class_match["Match"]/class_count["Counts"])*100
+        data_noises[noise] = percentage_class
+    
+    data_noises.T.plot(kind='bar')
+    plt.xlabel("Noise level")
+    plt.ylabel("Accuracy")
+    plt.xticks(rotation='horizontal')
+    plt.legend(bbox_to_anchor=(0.5, 1.1), loc='upper center', ncol=len(class_match.index))
+    save_pdf(plt, output_path, dataset + "_" + technique)
 
-    save_pdf(plt, output_path+dataset+'/', dataset + "_" + str(noise))
+def neighbor_per_noise(gen, dataset, technique):
+    path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
+    neigh_noise = pd.DataFrame(columns=list(map(str, range(2,8))))
+    markers = ['P', 'v', 's', '*', '.', 'X', 'o']
+
+    print(">>>>>> " + technique + " <<<<<<<")
+
+    #Read the csv according to technique
+    for noise in noise_params:
+        data = pd.read_csv(path_data+noise+".csv")
+        data.drop(data.columns[0], axis=1, inplace=True)
+
+        print("Noise level {}".format(noise))
+
+        for n in range(2, 8):
+            # print("-------------------- {} --------------------".format(n))
+            comb_cols = combination_columns(data.columns[:7], n)
+            data_n = []
+            for cols in comb_cols:
+                df1 = data[cols]
+                df2 = data[[col for col in data.columns[:7] if col not in cols]]
+
+                df = data[np.where(df1.eq(df1[cols[0]], axis=0).all(axis=1), True, False)\
+                         & np.where(df2.ne(df1[cols[0]], axis=0).all(axis=1), True, False)]
+
+                data_n.append(df)
+            
+            neigh = pd.concat(data_n)
+            neigh_match = neigh[(neigh["Predictions"] == neigh["Target"])].reset_index(drop=True)
+
+            # print(len(neigh_match)/len(neigh)*100)
+            neigh_noise.set_value(str(noise), str(n), len(neigh_match)/len(neigh)*100)
+
+    ax = neigh_noise.T.plot(kind='line')
+    for i, line in enumerate(ax.get_lines()):
+        line.set_marker(markers[i])
+
+    plt.xlabel("# Neighbors equals")
+    plt.ylabel("Accuracy")
+    plt.yticks(list(range(0,110, 10)))
+    plt.xticks(rotation='horizontal')
+    ax.legend(bbox_to_anchor=(0.5, 1.1), loc='upper center', ncol=len(neigh_noise.index))
+    plt.grid()
+    save_pdf(plt, output_path, dataset + "_" + technique + "_Neighbors")
+    # print('-----------------------------------------------------------------------------------------------------------------')
+
 
 def labels_changes_roc(gen, dataset, df1):
     labels = set().union(*[df1[col].unique() for col in df1.columns])
@@ -55,8 +108,6 @@ def labels_changes_roc(gen, dataset, df1):
                     dict_labels[v1][v2] += 1
         
         mean_labels[noise] = pd.DataFrame.from_dict(dict_labels, orient='columns')
-    
-    plot_heatmap(dataset, mean_labels)
 
 
 def read_labels_roc(gen, dataset, std_result):
@@ -78,16 +129,20 @@ def read_labels_roc(gen, dataset, std_result):
 
 
 if __name__ == "__main__":
-    datasets    = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
+    datasets    = ['Kyoto2008']
     gen_methods = ['SGH']
+    techniques = ['OLA', 'LCA']
     roc_dataset = dict.fromkeys(datasets, None)
 
     for gen in gen_methods:
         for dataset in datasets:
+            for technique in techniques:
+                # class_per_noise_technique(gen, dataset, technique)
+                neighbor_per_noise(gen, dataset, technique)
             # # Get the matches on RoC per noise
-            std_result = read_results.read_accuracies(gen, dataset, dataset, '00')
+            # std_result = read_results.read_accuracies(gen, dataset, dataset, '00')
             # roc_dataset[dataset] = read_labels_roc(gen, dataset, std_result)
             # # Evaluate the changes in labels based on noise level
-            labels_changes_roc(gen, dataset, std_result)
+            # labels_changes_roc(gen, dataset, std_result)
     # print(roc_dataset)
     # plot_roc(roc_dataset, datasets)

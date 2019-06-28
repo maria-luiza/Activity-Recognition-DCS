@@ -1,1 +1,1 @@
-# MCS_Activity_Recognition
+# Multiple Classifier Systems: An approach to Activity Recognition

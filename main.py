@@ -83,8 +83,6 @@ def process(args):
     method      = args['ds_method']
     gen_method  = args['gen_method']
 
-    roc_df = pd.DataFrame()
-
     pool_clf = gen_ensemble(X_train, y_train, gen_method)
 
     if method == "Random Forest":
@@ -110,6 +108,7 @@ def process(args):
 def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_method):
     pool = Pool(2)
     jobs = []
+    Y_Train = []
     Y_Test = []
 
     for f, fold in enumerate(folds):
@@ -121,6 +120,10 @@ def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_met
         y_test = np.array(fold.yTest)
         # Brew requires numeric class labels
         args['y_test'] = np.array([labels_dict.get(x) for x in y_test])
+
+        # Y_Train used to get the neighbors
+        Y_Train.append(args['y_train'])
+        # Y_Test used to get the targets
         Y_Test.append(args['y_test'])
 
         args['fold_name'] = 'Fold ' + str(f + 1)
@@ -133,9 +136,10 @@ def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_met
     predictions = np.concatenate([result.pop(-2) for result in results], axis=0 )
     indexes = np.concatenate([result.pop(-1) for result in results], axis=0 )
 
+    Y_Train = np.concatenate(Y_Train, axis=0)
     Y_Test = np.concatenate(Y_Test, axis=0)
 
-    roc_df = pd.DataFrame(Y_Test[indexes], columns = ["K_"+str(i) for i in range(1,8)])
+    roc_df = pd.DataFrame(Y_Train[indexes], columns = ["K"+str(i) for i in range(1,8)])
     roc_df["Predictions"] = predictions
     roc_df["Target"] = Y_Test
 
@@ -153,7 +157,6 @@ if __name__ == '__main__':
     # Main
     root = os.path.dirname(__file__)
     ds_methods = [OLA, LCA]
-    # ds_methods  = [OLA, LCA, MLA, Rank, MCB]
     gen_methods = [SGH]
     # datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
     datasets = ['Kyoto2008']

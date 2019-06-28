@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import read_results
-import itertools
+from collections import Counter
 from plotter import save_pdf
 import matplotlib.pyplot as plt
 
@@ -11,11 +11,6 @@ noise_params = ['00', '10', '20', '30', '40', '50']
 output_path = os.path.dirname(__file__) + '/Graphs/'
 input_path = os.path.dirname(__file__) + '/Results/'
 markers = ['o-', 's-', '^-', 'd-', '*-', 'X-', 'D-', 'P-', '8-']
-
-
-def combination_columns(columns, n):
-    col_combinations = list(itertools.combinations(columns, n))
-    return list(map(list, col_combinations))
 
 
 def class_per_noise_technique(gen, dataset, technique):
@@ -46,6 +41,8 @@ def class_per_noise_technique(gen, dataset, technique):
 
 def neighbor_per_noise(gen, dataset, technique):
     path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
+    k_neighbors = [str(k) for k in range(2, 8)]
+
     neigh_noise = pd.DataFrame(columns=list(map(str, range(2,8))))
     markers = ['P', 'v', 's', '*', '.', 'X', 'o']
 
@@ -56,26 +53,37 @@ def neighbor_per_noise(gen, dataset, technique):
         data = pd.read_csv(path_data+noise+".csv")
         data.drop(data.columns[0], axis=1, inplace=True)
 
-        print("Noise level {}".format(noise))
+        data_comb = dict((str(k), []) for k in k_neighbors)
 
-        for n in range(2, 8):
-            # print("-------------------- {} --------------------".format(n))
-            comb_cols = combination_columns(data.columns[:7], n)
-            data_n = []
-            for cols in comb_cols:
-                df1 = data[cols]
-                df2 = data[[col for col in data.columns[:7] if col not in cols]]
+        for row in data.values:
+            neighbors = Counter(row[:7])
+            freq_neighbors = neighbors.values()
 
-                df = data[np.where(df1.eq(df1[cols[0]], axis=0).all(axis=1), True, False)\
-                         & np.where(df2.ne(df1[cols[0]], axis=0).all(axis=1), True, False)]
+            if 2 in freq_neighbors:
+                data_comb["2"].append(list(row))
+            elif 3 in freq_neighbors:
+                data_comb["3"].append(list(row))
+            elif 4 in freq_neighbors:
+                data_comb["4"].append(list(row))
+            elif 5 in freq_neighbors:
+                data_comb["5"].append(list(row))
+            elif 6 in freq_neighbors:
+                data_comb["6"].append(list(row))
+            else:
+                data_comb["7"].append(list(row))
+        
+        dataframes = dict.fromkeys(k_neighbors)
+        for k in k_neighbors:
+            dataframes[k] = pd.DataFrame(data_comb[k], columns=data.columns)
+            neighbors_match = dataframes[k][(dataframes[k]["Predictions"] == dataframes[k]["Target"])].reset_index(drop=True)
 
-                data_n.append(df)
+            if len(dataframes[k]) == 0:
+                percentage_neigh = None
+            else:
+                percentage_neigh = (len(neighbors_match)/len(dataframes[k]))*100
             
-            neigh = pd.concat(data_n)
-            neigh_match = neigh[(neigh["Predictions"] == neigh["Target"])].reset_index(drop=True)
+            neigh_noise.set_value(str(noise), str(k), percentage_neigh)
 
-            # print(len(neigh_match)/len(neigh)*100)
-            neigh_noise.set_value(str(noise), str(n), len(neigh_match)/len(neigh)*100)
 
     ax = neigh_noise.T.plot(kind='line')
     for i, line in enumerate(ax.get_lines()):
@@ -88,7 +96,6 @@ def neighbor_per_noise(gen, dataset, technique):
     ax.legend(bbox_to_anchor=(0.5, 1.1), loc='upper center', ncol=len(neigh_noise.index))
     plt.grid()
     save_pdf(plt, output_path, dataset + "_" + technique + "_Neighbors")
-    # print('-----------------------------------------------------------------------------------------------------------------')
 
 
 def labels_changes_roc(gen, dataset, df1):

@@ -40,11 +40,10 @@ def class_per_noise_technique(gen, dataset, technique):
     save_pdf(plt, output_path, dataset + "_" + technique)
 
 def neighbor_per_noise(gen, dataset, technique):
-    path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
     k_neighbors = [str(k) for k in range(2, 8)]
+    path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
 
     neigh_noise = pd.DataFrame(columns=list(map(str, range(2,8))))
-    markers = ['P', 'v', 's', '*', '.', 'X', 'o']
 
     print(">>>>>> " + technique + " <<<<<<<")
 
@@ -75,7 +74,7 @@ def neighbor_per_noise(gen, dataset, technique):
         dataframes = dict.fromkeys(k_neighbors)
         for k in k_neighbors:
             dataframes[k] = pd.DataFrame(data_comb[k], columns=data.columns)
-            neighbors_match = dataframes[k][(dataframes[k]["Predictions"] == dataframes[k]["Target"])].reset_index(drop=True)
+            neighbors_match = dataframes[k][(dataframes[k]["Target"] == dataframes[k]["Predictions"])].reset_index(drop=True)
 
             if len(dataframes[k]) == 0:
                 percentage_neigh = None
@@ -83,38 +82,58 @@ def neighbor_per_noise(gen, dataset, technique):
                 percentage_neigh = (len(neighbors_match)/len(dataframes[k]))*100
             
             neigh_noise.set_value(str(noise), str(k), percentage_neigh)
+    
+    print(neigh_noise)
 
 
-    ax = neigh_noise.T.plot(kind='line')
-    for i, line in enumerate(ax.get_lines()):
-        line.set_marker(markers[i])
+def neighbors_techniques(gen, dataset, techniques, k):
+    noise_df = dict((noise, pd.DataFrame()) for noise in noise_params)
+    for technique in techniques:
+        path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
 
-    plt.xlabel("# Neighbors equals")
-    plt.ylabel("Accuracy")
-    plt.yticks(list(range(0,110, 10)))
-    plt.xticks(rotation='horizontal')
-    ax.legend(bbox_to_anchor=(0.5, 1.1), loc='upper center', ncol=len(neigh_noise.index))
-    plt.grid()
-    save_pdf(plt, output_path, dataset + "_" + technique + "_Neighbors")
+        #Read the csv according to technique
+        for noise in noise_params:
+            data = pd.read_csv(path_data+noise+".csv")
+            data.drop(data.columns[0], axis=1, inplace=True)
 
+            data_comb = []
+            for row in data.values:
+                neighbors = Counter(row[:7])
+                freq_neighbors = neighbors.values()
+                if k in freq_neighbors:
+                    data_comb.append(list(row))
 
-def labels_changes_roc(gen, dataset, df1):
-    labels = set().union(*[df1[col].unique() for col in df1.columns])
-    mean_labels = dict.fromkeys(noise_params[1:], None)
+            data = pd.DataFrame(data_comb, columns=data.columns)
+            if noise_df[noise].empty:
+                #Change the name of predictions
+                data.rename(columns={"Predictions": "Predictions_"+str(technique)}, inplace=True)
+                noise_df[noise] = data
+            else:
+                noise_df[noise]["Predictions_"+str(technique)] = data["Predictions"]
 
-    for noise in noise_params[1:]:
-        dict_labels = {k: {t: 0 for t in labels} for k in labels}
-        # Read the noisy dataset
-        df2 = read_results.read_accuracies(gen, dataset, dataset, noise)
+    accuracy_noise = pd.DataFrame(index = ["Errors"], columns=range(0,60,10))
 
-        for (_, s1 ), ( _, s2 ) in itertools.zip_longest( df1.iterrows(), df2.iterrows() ) :
-            s1_l, s2_l = s1.tolist(), s2.tolist()
-
-            for v1, v2 in zip(s1_l, s2_l):
-                if v1 != v2:
-                    dict_labels[v1][v2] += 1
+    for noise in noise_params:
+        noise_df[noise] = noise_df[noise][(noise_df[noise]["Target"] == noise_df[noise]["K1"])].reset_index(drop=True)
+        print("Size: ", noise_df[noise].size)
         
-        mean_labels[noise] = pd.DataFrame.from_dict(dict_labels, orient='columns')
+        neighbors_match_OLA = noise_df[noise][(noise_df[noise]["Target"] == noise_df[noise]["Predictions_OLA"])].reset_index(drop=True)
+        neighbors_match_LCA = noise_df[noise][(noise_df[noise]["Target"] == noise_df[noise]["Predictions_LCA"])].reset_index(drop=True)
+
+        print("OLA - {}, LCA - {}".format(neighbors_match_OLA.size, neighbors_match_LCA.size))
+
+        # accuracy_noise.set_value("Errors", int(noise), (neighbors_match.size/noise_df[noise].size)*100)
+        # accuracy_noise.set_value("LCA", noise, (neighbors_match_LCA.size/noise_df[noise].size)*100)
+    
+    # accuracy_noise.T.plot(kind='line')
+    # plt.xlabel("Noise level")
+    # plt.ylabel("Errors %")
+    # plt.xticks(rotation='horizontal')
+    # plt.legend(bbox_to_anchor=(0.5, 1.1), loc='upper center', ncol=len(accuracy_noise.index))
+    # plt.grid()
+    # plt.show()
+    
+    return accuracy_noise        
 
 
 def read_labels_roc(gen, dataset, std_result):
@@ -134,15 +153,42 @@ def read_labels_roc(gen, dataset, std_result):
         mean_roc[noise] = df['mean'].mean(axis=0)*100
     return mean_roc
 
+def plot_df(df, gen, dataset, technique):
+    markers = ['P', 'v', 's', '*', '.', 'X', 'o']
+
+    ax = df.plot(kind='line')
+    for i, line in enumerate(ax.get_lines()):
+        line.set_marker(markers[i])
+
+    plt.xlabel("# Neighbors equals")
+    plt.ylabel("Accuracy")
+    plt.yticks(list(range(0,110, 10)))
+    plt.xticks(rotation='horizontal')
+    ax.legend(bbox_to_anchor=(0.5, 1.1), loc='upper center', ncol=len(df.index))
+    plt.grid()
+    save_pdf(plt, output_path, dataset + "_" + technique + "_Neighbors")
+
 
 if __name__ == "__main__":
     datasets    = ['Kyoto2008']
     gen_methods = ['SGH']
     techniques = ['OLA', 'LCA']
     roc_dataset = dict.fromkeys(datasets, None)
+    roc = list(range(2,8))
 
+    df = pd.DataFrame(index=roc, columns=noise_params)
     for gen in gen_methods:
         for dataset in datasets:
+            # for technique in techniques:
+                # for k in roc:
+                    # print(">>>>>>> {} <<<<<<<".format(k))
+            # acc_df = neighbors_techniques(gen, dataset, techniques, 7)
+            # print(acc_df)
+                    # break
+                #     df.loc[k] = acc_df.loc[str(technique)]
+
+                # plot_df(df, gen, dataset, technique)
+
             for technique in techniques:
                 # class_per_noise_technique(gen, dataset, technique)
                 neighbor_per_noise(gen, dataset, technique)

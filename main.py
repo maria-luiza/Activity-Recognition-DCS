@@ -47,7 +47,7 @@ def gen_ensemble(X_train, y_train, gen_method):
     return pool_clf
 
 def ds_ensemble(X_train, y_train, pool_clf, dyn_sel_method):
-    ds_met   = dyn_sel_method(pool_clf)
+    ds_met   = dyn_sel_method(pool_clf, selection_method='best')
     indexes = ds_met.fit(X_train, y_train)
     return ds_met, indexes
 
@@ -93,9 +93,9 @@ def process(args):
         ensemble, indexes_train = ds_ensemble(X_train, y_train, pool_clf, method)
 	
     if method == Oracle:
-        predictions, indexes_test = ensemble.predict(X_test, y_test)
+        predictions, neighbors = ensemble.predict(X_test, y_test)
     else:
-        predictions, indexes_test = ensemble.predict(X_test)
+        predictions, neighbors = ensemble.predict(X_test)
 
     #Results
     accuracy_by_class, accuracy, \
@@ -103,12 +103,11 @@ def process(args):
     recall_micro, \
     f1_score_micro, = compute_accuracy(y_test, predictions)
 
-    return [fold_name, accuracy, accuracy_by_class, precision_micro, recall_micro, f1_score_micro, predictions, indexes_test]
+    return [fold_name, accuracy, accuracy_by_class, precision_micro, recall_micro, f1_score_micro, predictions, neighbors]
 
 def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_method):
     pool = Pool(2)
     jobs = []
-    Y_Train = []
     Y_Test = []
 
     for f, fold in enumerate(folds):
@@ -121,8 +120,6 @@ def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_met
         # Brew requires numeric class labels
         args['y_test'] = np.array([labels_dict.get(x) for x in y_test])
 
-        # Y_Train used to get the neighbors
-        Y_Train.append(args['y_train'])
         # Y_Test used to get the targets
         Y_Test.append(args['y_test'])
 
@@ -133,13 +130,12 @@ def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_met
 
     results = list(map(process, jobs))
     # Get all roc indexes
-    predictions = np.concatenate([result.pop(-2) for result in results], axis=0 )
-    indexes = np.concatenate([result.pop(-1) for result in results], axis=0 )
+    neighbors = np.concatenate([result.pop(-1) for result in results], axis=0 )
+    predictions = np.concatenate([result.pop(-1) for result in results], axis=0 )
 
-    Y_Train = np.concatenate(Y_Train, axis=0)
     Y_Test = np.concatenate(Y_Test, axis=0)
 
-    roc_df = pd.DataFrame(Y_Train[indexes], columns = ["K"+str(i) for i in range(1,8)])
+    roc_df = pd.DataFrame(neighbors, columns = ["K"+str(i) for i in range(1,8)])
     roc_df["Predictions"] = predictions
     roc_df["Target"] = Y_Test
 

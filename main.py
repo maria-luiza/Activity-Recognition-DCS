@@ -90,12 +90,24 @@ def process(args):
         ensemble.fit(X_train, y_train)
         
     else:
-        ensemble, indexes_train = ds_ensemble(X_train, y_train, pool_clf, method)
+        ensemble, neighbors_train = ds_ensemble(X_train, y_train, pool_clf, method)
 	
     if method == Oracle:
-        predictions, neighbors = ensemble.predict(X_test, y_test)
+        predictions, neighbors_test = ensemble.predict(X_test, y_test)
     else:
-        predictions, neighbors = ensemble.predict(X_test)
+        predictions, neighbors_test = ensemble.predict(X_test)
+    
+
+    roc_df = pd.DataFrame(neighbors_test, columns = ["K"+str(i) for i in range(1,8)])
+    roc_df["Predictions"] = predictions
+    roc_df["Target"] = y_test
+
+    save_results_df(
+        roc_df,
+        dataset,
+        "Folds/",
+        args['noise'],
+        dataset + "_" + str(method).split('.')[-1].split('\'')[0] +"_"+args['fold_name'])
 
     #Results
     accuracy_by_class, accuracy, \
@@ -103,7 +115,7 @@ def process(args):
     recall_micro, \
     f1_score_micro, = compute_accuracy(y_test, predictions)
 
-    return [fold_name, accuracy, accuracy_by_class, precision_micro, recall_micro, f1_score_micro, predictions, neighbors]
+    return [fold_name, accuracy, accuracy_by_class, precision_micro, recall_micro, f1_score_micro, predictions, neighbors_test]
 
 def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_method):
     pool = Pool(2)
@@ -123,9 +135,10 @@ def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_met
         # Y_Test used to get the targets
         Y_Test.append(args['y_test'])
 
-        args['fold_name'] = 'Fold ' + str(f + 1)
+        args['fold_name'] = 'Fold_' + str(f + 1)
         args['ds_method'] = dyn_selector
         args['gen_method'] = gen_method
+        args['noise'] = noise
         jobs.append(args)
 
     results = list(map(process, jobs))

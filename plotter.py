@@ -3,6 +3,7 @@ import io
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 from Orange.evaluation import compute_CD, graph_ranks
 
@@ -16,6 +17,9 @@ from scipy.stats import wilcoxon
 import numpy as np
 
 
+noise_params = ['00', '10', '20', '30', '40', '50']
+
+
 def save_pdf(plot, path, name):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -25,6 +29,84 @@ def save_pdf(plot, path, name):
         d['Author'] = u'Maria Luiza'
         pdf.savefig(bbox_inches="tight", dpi = 100)
         plot.close()
+
+def plot_dataframes(dataframe1, dataframe2, dataset, classe):
+    output_path = os.path.dirname(__file__) + '/Graphs/' + dataset + "/Classes/" 
+    ind = dataframe1.index.astype('int')
+    width = 0.35
+
+    fig, axes = plt.subplots(ncols=1, nrows=len(noise_params), sharex=True)
+    fig.text(0.55, 0.01, 'Neighbors with same label', ha='center')
+    fig.text(-0.01, 0.55, 'Correctly Labeled', va='center', rotation='vertical')
+
+    for i, ax in enumerate(axes.flatten()):
+        OLA = ax.bar(ind, dataframe1.loc[:,noise_params[i]], width, color='b')
+        LCA = ax.bar(ind + width, dataframe2.loc[:,noise_params[i]], width, color='r')
+        ax.set_title('Noise {}%'.format(noise_params[i]), fontsize=9)
+
+        def autolabel(rects, col):
+            """
+            Attach a text label above each bar displaying its height
+            """
+            for rect in rects:
+                height = rect.get_height()
+                ax.text(rect.get_x() + rect.get_width()/2., 1.005*height,
+                        '%d' % int(height),
+                        ha='center', va='bottom', color=col, fontsize=8)
+
+        autolabel(OLA, 'blue')
+        autolabel(LCA, 'red')
+    
+    fig.legend((OLA, LCA), ('OLA', 'LCA'), loc = 'upper left', ncol=2)
+    plt.tight_layout()
+    save_pdf(plt, output_path, dataset + "_class_" + str(classe))
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title=None,
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if not title:
+        if normalize:
+            title = 'Normalized confusion matrix'
+        else:
+            title = 'Confusion matrix, without normalization'
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
+    ax.figure.colorbar(im, ax=ax)
+    # We want to show all ticks...
+    ax.set(xticks=np.arange(cm.shape[1]),
+           yticks=np.arange(cm.shape[0]),
+           # ... and label them with the respective list entries
+           xticklabels=classes, yticklabels=classes,
+           title=title,
+           ylabel='True label',
+           xlabel='Predicted label')
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+             rotation_mode="anchor")
+
+    # Loop over data dimensions and create text annotations.
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, format(cm[i, j], fmt),
+                    ha="center", va="center",
+                    color="white" if cm[i, j] > thresh else "black")
+    fig.tight_layout()
+    return ax
 
 
 def plot_technique(gen_methods, dataset, metric, techniques):
@@ -57,7 +139,6 @@ def plot_technique(gen_methods, dataset, metric, techniques):
     plt.ylabel(metric)
     plt.xlabel('Noise per rate (%)')
     plt.title(dataset)
-
     plt.grid()
     save_pdf(plt, output_path, '_'.join(techniques) + "_" + metric)
 
@@ -108,15 +189,15 @@ def plot_free_noise(datasets, metric, techniques):
 
 def plot_nemenyi(ranks, techniques, noise):
     cd = compute_CD(ranks, 30, alpha="0.05")
-    print(cd)
     graph_ranks(ranks, techniques, cd=cd, width=len(techniques), textspace=1.5)
     save_pdf(plt, os.path.dirname(__file__) + '/Graphs/', 'Nemenyi_' + noise)
 
 if __name__ == '__main__':
-    datasets    = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
+    # datasets    = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
+    datasets    = ['Kyoto2008']
     metrics = ["Accuracy"]
-    techniques = ['OLA', 'LCA', 'Rank', 'MCB', 'Random Forest']
-    # gen_methods = ['AdaBoostClassifier','BaggingClassifier','SGH']
+    # techniques = ['OLA', 'LCA', 'Rank', 'MCB', 'Random Forest']
+    techniques = ['OLA', 'LCA']
     gen_methods = ['SGH']
     # tableLatex  = open("tableLatex.txt", 'w')
 
@@ -137,20 +218,20 @@ if __name__ == '__main__':
                 mean_accuracies, std_accuracies = read_mean_results(gen, dataset, ['00', '10', '20', '30', '40', '50'], metric, techniques)
 
                 print("############# Database >>>> {} <<<< ##############".format(dataset))
-                # print(mean_accuracies.T)
+                print(mean_accuracies.T)
 
-                acc_pd = pd.DataFrame(index = ['00', '10', '20', '30', '40', '50'], columns = mean_accuracies.columns)
-                acc_pd = mean_accuracies.astype(str) + '$\pm$' + '(' + std_accuracies.astype(str) + ')'
+                # acc_pd = pd.DataFrame(index = ['00', '10', '20', '30', '40', '50'], columns = mean_accuracies.columns)
+                # acc_pd = mean_accuracies.astype(str) + '$\pm$' + '(' + std_accuracies.astype(str) + ')'
                 
-                # table_latex.append(acc_pd)
+                # # table_latex.append(acc_pd)
                 
-                if metric == "Accuracy":
-                    dictionary = mean_accuracies.to_dict(orient='index')
-                    d = {}
-                    for k in dictionary:
-                        d[k] = [dictionary[k][column_name] for column_name in mean_accuracies.columns]
+                # if metric == "Accuracy":
+                #     dictionary = mean_accuracies.to_dict(orient='index')
+                #     d = {}
+                #     for k in dictionary:
+                #         d[k] = [dictionary[k][column_name] for column_name in mean_accuracies.columns]
 
-                    data_sets[dataset] = d
+                #     data_sets[dataset] = d
 
                 # plot_technique(gen_methods, dataset, metric, ['Oracle'])
                 # plot_results(gen, dataset, metric, techniques)
@@ -173,4 +254,4 @@ if __name__ == '__main__':
                                                     )
         
         plot_nemenyi(ranks, techniques, key)
-        # plot_free_noise(datasets, metric, techniques)
+        plot_free_noise(datasets, metric, techniques)

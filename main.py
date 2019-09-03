@@ -93,21 +93,12 @@ def process(args):
         ensemble, neighbors_train = ds_ensemble(X_train, y_train, pool_clf, method)
 	
     if method == Oracle:
-        predictions, neighbors_test = ensemble.predict(X_test, y_test)
+        predictions, neighbors_test, competences = ensemble.predict(X_test, y_test)
     else:
-        predictions, neighbors_test = ensemble.predict(X_test)
+        predictions, neighbors_test, competences = ensemble.predict(X_test)
     
-
-    roc_df = pd.DataFrame(neighbors_test, columns = ["K"+str(i) for i in range(1,8)])
-    roc_df["Predictions"] = predictions
-    roc_df["Target"] = y_test
-
-    save_results_df(
-        roc_df,
-        dataset,
-        "Folds/",
-        args['noise'],
-        dataset + "_" + str(method).split('.')[-1].split('\'')[0] +"_"+args['fold_name'])
+    comp_df = pd.DataFrame(competences, columns=["Base_"+str(i) for i in range(len(competences[0]))])
+    comp_df["Target"] = y_test
 
     #Results
     accuracy_by_class, accuracy, \
@@ -115,7 +106,7 @@ def process(args):
     recall_micro, \
     f1_score_micro, = compute_accuracy(y_test, predictions)
 
-    return [fold_name, accuracy, accuracy_by_class, precision_micro, recall_micro, f1_score_micro, predictions, neighbors_test]
+    return [fold_name, accuracy, accuracy_by_class, precision_micro, recall_micro, f1_score_micro, neighbors_test, comp_df, predictions]
 
 def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_method):
     pool = Pool(2)
@@ -142,25 +133,33 @@ def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_met
         jobs.append(args)
 
     results = list(map(process, jobs))
-    # Get all roc indexes
-    neighbors = np.concatenate([result.pop(-1) for result in results], axis=0 )
+
+    # Get all predictions
     predictions = np.concatenate([result.pop(-1) for result in results], axis=0 )
 
-    Y_Test = np.concatenate(Y_Test, axis=0)
+    # Competence level for each activity measured for each classifier
+    comp_df = pd.concat([result.pop(-1) for result in results])
+    comp_df["Predictions"] = predictions
 
-    roc_df = pd.DataFrame(neighbors, columns = ["K"+str(i) for i in range(1,8)])
-    roc_df["Predictions"] = predictions
-    roc_df["Target"] = Y_Test
+    # # Get all roc indexes
+    # neighbors = np.concatenate([result.pop(-1) for result in results], axis=0 )
+
+    # Y_Test = np.concatenate(Y_Test, axis=0)
+
+    # roc_df = pd.DataFrame(neighbors, columns = ["K"+str(i) for i in range(1,8)])
+    # roc_df["Predictions"] = predictions
+    # roc_df["Target"] = Y_Test
 
     pool.close()
 
-    # metrics     = ['Accuracy', 'Precision', 'Recall', 'F1']
+    # # metrics     = ['Accuracy', 'Precision', 'Recall', 'F1']
 
     # # Desconsidering Accuracy by class
     # accuracy_class_df, results_df = build_results_df(metrics, results, activities_list)
     # save_results_df(results_df, dataset, str(gen_method).split('.')[-1].split('\'')[0], noise, str(dyn_selector).split('.')[-1].split('\'')[0])
     # save_results_df(accuracy_class_df, dataset, str(gen_method).split('.')[-1].split('\'')[0], noise, str(dyn_selector).split('.')[-1].split('\'')[0] + "_by_class")
-    save_results_df(roc_df, dataset, str(gen_method).split('.')[-1].split('\'')[0], noise, dataset + "_" + str(dyn_selector).split('.')[-1].split('\'')[0] +"_Test")
+    # save_results_df(roc_df, dataset, str(gen_method).split('.')[-1].split('\'')[0], noise, dataset + "_" + str(dyn_selector).split('.')[-1].split('\'')[0] +"_Test")
+    save_results_df(comp_df, dataset + "/Competence", str(gen_method).split('.')[-1].split('\'')[0], noise, dataset + "_" + str(dyn_selector).split('.')[-1].split('\'')[0] +"_Competence")
 
 if __name__ == '__main__':
     # Main

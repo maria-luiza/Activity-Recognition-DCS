@@ -13,8 +13,8 @@ output_path = os.path.dirname(__file__) + '/Graphs/'
 input_path = os.path.dirname(__file__) + '/Results/'
 markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8']
 
-def neighborhood(path, dataset, gen, technique, noise):
-    # Return the df correspondent to k neighbors with same label
+def competence_classifiers(path, dataset, gen, technique, noise):
+    # Return the competences df
     path_data = input_path + gen + "/" + dataset + "/" + path + "/" +dataset + "_" + technique + "_" + path + "_Noise_"
     
     # Read the data
@@ -53,6 +53,92 @@ def neighborhood(path, dataset, gen, technique, noise):
         plt.xlabel("Mean of Competence")
         plt.ylabel("Base Classifiers")
         save_pdf(plt, output_path + "Competence/", dataset + "_" + technique + "_" + noise + "_classe_" + str(classe))
+
+
+def competence_neighbors(path, dataset, gen, technique, ks):
+    folder = input_path + gen + "/" + dataset + "/" + path + "/" +dataset + "_" + technique + "_" + path + "_Noise_"
+
+    for noise in noise_params:
+        # Read the data
+        data = pd.read_csv(folder+noise+".csv")
+        data.drop(data.columns[0], axis=1, inplace=True)
+
+        # Get classes
+        classes = set(data['Target'])
+
+        for classe in classes:
+            print("Classe {}".format(classe))
+            
+            # Filter dataset based on class
+            data_classe = data[data['Target'] == classe]
+            indexes = data_classe.index
+            
+            # Get neighbors classes
+            neighbors_df = data_classe.filter(like='K', axis=1)
+
+            for k in ks:
+                print("Neighbors: ", k)
+                minors = []
+                data_comb, ind = [], []
+
+                # Get indexes and values for each neighbor
+                for index, row in zip(indexes, neighbors_df.values):
+                    neighbors = Counter(row[:7]).most_common()
+
+                    key_neighbors = [value[0] for value in neighbors]
+                    freq_neighbors = [value[1] for value in neighbors]
+
+                    if k in freq_neighbors:
+                        # Get indexes where the K is compatible
+                        ind.append(index)
+
+                        # Get the neighbors
+                        values = list(row)
+                        data_comb.append(values)
+
+                        # Get minority classes
+                        minor = list(key_neighbors[1:])
+                        minors.append([minor])
+
+                # # Transform the data for K neighbors in Dataframe
+                # data_k = pd.DataFrame(data_comb, columns=neighbors_df.columns)
+
+                # Filter the competences and original data
+                filter_df = data_classe[data_classe.index.isin(ind)]
+                
+                # Replace NaN to zero
+                filter_df.replace(np.NaN, 0, inplace=True)
+
+                if not filter_df.empty:
+                    # Adding minority classes in RoC on dataframe
+                    filter_df.loc[:,'Minor'] = minors
+
+                    # Filter the dataframe to predictions equal to minor class 
+                    minor_predictions = filter_df[filter_df.apply(lambda x: x['Predictions'] in x['Minor'], axis=1)]
+
+                    if not minor_predictions.empty:
+                        # Get competences from correct and wrong predictions
+                        correct_df = minor_predictions[minor_predictions['Target'] == minor_predictions['Predictions']]
+                        error_df = minor_predictions[minor_predictions['Target'] != minor_predictions['Predictions']]
+
+                        # Desconsidering two last columns in evaluation
+                        correct_df = correct_df.filter(like='B',axis=1)
+                        error_df = error_df.filter(like='B',axis=1)
+
+                        # Get mean of each base classifier
+                        means_hits, means_error = correct_df.mean(axis=0), error_df.mean(axis=0)
+
+                        # Concat hits and errors for each classifier
+                        competences_df = pd.concat([means_hits, means_error], axis=1)
+                        competences_df.columns = ["Hits", "Errors"]
+
+                        competences_df.replace(np.NaN, 0, inplace=True)
+
+                        competences_df.plot(kind='bar')
+                        plt.title("Technique: {} - Noise {} - Classe: {}".format(technique, noise, classe))
+                        plt.xlabel("Mean of Competence")
+                        plt.ylabel("Base Classifiers")
+                        save_pdf(plt, output_path + "Competence/", dataset + "_" + technique + "_" + noise + "_classe_" + str(classe))
 
 
 def fold_class(dataset, gen, techniques, noise):
@@ -320,9 +406,10 @@ if __name__ == "__main__":
         print("Generation Method: ", gen)
         for dataset in datasets:
             print("Dataset: ", dataset)
-            for noise in noise_params:
-                print("Noise: {}%".format(noise))
-                for technique in techniques:
-                    print("Technique: ", technique)
-                    neighborhood("Competence", dataset, gen, technique, noise)
+            for technique in techniques:
+                print("Technique: ", technique)
+                competence_neighbors("Competence", dataset, gen, technique, range(5,7))
+                # for noise in noise_params:
+                #     print("Noise: {}%".format(noise))
+                    # competence_classifiers("Competence", dataset, gen, technique, noise)
                         

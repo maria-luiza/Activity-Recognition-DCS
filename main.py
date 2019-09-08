@@ -58,6 +58,7 @@ def balance_dataset(tech, X_train, y_train):
 def compute_accuracy(y_test, y_pred):
     labels = list(set(y_test))
 
+    # Evaluate scores - Accuracy, Precision, Recall, and F1 Score
     conf_matrix   = confusion_matrix(y_test, y_pred, labels=labels)
     precision     = precision_score(y_test, y_pred, average='micro')
     recall        = recall_score(y_test, y_pred, average='micro')
@@ -83,30 +84,32 @@ def process(args):
     method      = args['ds_method']
     gen_method  = args['gen_method']
 
+    # Generation method
     pool_clf = gen_ensemble(X_train, y_train, gen_method)
 
+    # Evaluation considering Random Forest
     if method == "Random Forest":
         ensemble = RandomForestClassifier(n_estimators=100)
         ensemble.fit(X_train, y_train)
-        
+
+    # Dynamic Selection techniques
     else:
         ensemble, neighbors_train = ds_ensemble(X_train, y_train, pool_clf, method)
 	
+    # In prediction phase, two options: Oracle and DS techniques
+    # In this step, the competences were evaluated
     if method == Oracle:
         predictions, neighbors_test, competences = ensemble.predict(X_test, y_test)
     else:
         predictions, neighbors_test, competences = ensemble.predict(X_test)
     
-    comp_df = pd.DataFrame(competences, columns=["Base_"+str(i) for i in range(len(competences[0]))])
-    comp_df["Target"] = y_test
-
     #Results
     accuracy_by_class, accuracy, \
     precision_micro, \
     recall_micro, \
     f1_score_micro, = compute_accuracy(y_test, predictions)
 
-    return [fold_name, accuracy, accuracy_by_class, precision_micro, recall_micro, f1_score_micro, neighbors_test, comp_df, predictions]
+    return [fold_name, accuracy, accuracy_by_class, precision_micro, recall_micro, f1_score_micro, neighbors_test, competences, predictions]
 
 def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_method):
     pool = Pool(2)
@@ -138,17 +141,36 @@ def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_met
     predictions = np.concatenate([result.pop(-1) for result in results], axis=0 )
 
     # Competence level for each activity measured for each classifier
-    comp_df = pd.concat([result.pop(-1) for result in results])
-    comp_df["Predictions"] = predictions
+    dfs = []
+    competences = [result.pop(-1) for result in results]
+    
+    # Due to the different amount of classifiers for fold
+    for comp in competences:
+        df = pd.DataFrame(comp, columns = ["B"+str(i) for i in range(len(comp[0]))])
+        dfs.append(df)
+    
+    # Concat competence folds
+    comp_df = pd.concat(dfs, axis=0)
+    
+    # Replace NaN values to zero
+    comp_df.replace(np.NaN, 0, inplace=True)
+    
+    # Get all roc indexes
+    neighbors = np.concatenate([result.pop(-1) for result in results], axis=0 )
 
-    # # Get all roc indexes
-    # neighbors = np.concatenate([result.pop(-1) for result in results], axis=0 )
+    # Columns for neighbors
+    cols = ["K"+str(i) for i in range(1,8)]
+    neighbors_df = pd.DataFrame(neighbors, columns = cols)
 
-    # Y_Test = np.concatenate(Y_Test, axis=0)
+    # Get all Targets
+    Y_Test = np.concatenate(Y_Test, axis=0)
 
-    # roc_df = pd.DataFrame(neighbors, columns = ["K"+str(i) for i in range(1,8)])
-    # roc_df["Predictions"] = predictions
-    # roc_df["Target"] = Y_Test
+    # Concat neighbors and competences dataframes
+    final_df = neighbors_df.merge(comp_df, left_index=True, right_index=True, how='inner')
+
+    # Adding Predictions and Target
+    final_df["Predictions"] = predictions
+    final_df["Target"] = Y_Test
 
     pool.close()
 
@@ -159,7 +181,7 @@ def experiment(folds, activities_list, labels_dict, dyn_selector, noise, gen_met
     # save_results_df(results_df, dataset, str(gen_method).split('.')[-1].split('\'')[0], noise, str(dyn_selector).split('.')[-1].split('\'')[0])
     # save_results_df(accuracy_class_df, dataset, str(gen_method).split('.')[-1].split('\'')[0], noise, str(dyn_selector).split('.')[-1].split('\'')[0] + "_by_class")
     # save_results_df(roc_df, dataset, str(gen_method).split('.')[-1].split('\'')[0], noise, dataset + "_" + str(dyn_selector).split('.')[-1].split('\'')[0] +"_Test")
-    save_results_df(comp_df, dataset + "/Competence", str(gen_method).split('.')[-1].split('\'')[0], noise, dataset + "_" + str(dyn_selector).split('.')[-1].split('\'')[0] +"_Competence")
+    save_results_df(final_df, dataset + "/Competence", str(gen_method).split('.')[-1].split('\'')[0], noise, dataset + "_" + str(dyn_selector).split('.')[-1].split('\'')[0] +"_Competence")
 
 if __name__ == '__main__':
     # Main

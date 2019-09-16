@@ -13,52 +13,37 @@ output_path = os.path.dirname(__file__) + '/Graphs/'
 input_path = os.path.dirname(__file__) + '/Results/'
 markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8']
 
-def competence_classifiers(path, dataset, gen, technique, noise):
-    # Return the competences df
-    path_data = input_path + gen + "/" + dataset + "/" + path + "/" +dataset + "_" + technique + "_" + path + "_Noise_"
+def dataframe_pred(dataframe, columns):
+    # Number of Base classifiers
+    cols_B = [col for col in columns if "B" in col]
     
-    # Read the data
-    data = pd.read_csv(path_data+noise+".csv", index_col=None)
-    data.drop(data.columns[0], axis=1, inplace=True)
+    if not dataframe.empty:
+        # Filter by predictions
+        data_pred = dataframe[dataframe['Target'] == dataframe['Predictions']]
 
-    # Get classes
-    classes = set(data['Target'])
+        if not data_pred.empty:
+            # Filter by Base Classifiers
+            df_out = data_pred.filter(like='B',axis=1)
+            return df_out
 
-    for classe in classes:
-        print("Classe: {}".format(classe))
-        # Filter dataset based on class
-        data_classe = data[data['Target'] == classe]
-        data_classe = data_classe.sort_index(axis=1)
-        data_classe.replace(np.NaN, 0, inplace=True)
+    out = pd.DataFrame(0, index=np.arange(len(cols_B)), columns=cols_B)
 
-        # Split dataset into hits and mistakes
-        hits_df = data_classe[data_classe['Target'] == data_classe['Predictions']]
-        error_df = data_classe[data_classe['Target'] != data_classe['Predictions']]
-        
-        # print("Hits: {} - Mistakes: {}".format(len(hits_df), len(error_df)))
+    return out
 
-        # Desconsidering two last columns in evaluation
-        hits_df = hits_df.drop(['Target', 'Predictions'], axis=1)
-        error_df = error_df.drop(['Target', 'Predictions'], axis=1)
-        
-        # Get mean of each base classifier
-        means_hits, means_error = hits_df.mean(axis=0), error_df.mean(axis=0)
 
-        # Concat hits and errors for each classifier
-        competences_df = pd.concat([means_hits, means_error], axis=1)
-        competences_df.columns = ["Hits", "Errors"]
-
-        competences_df.plot(kind='bar')
-        plt.title("Technique: {} - Noise {} - Classe: {}".format(technique, noise, classe))
-        plt.xlabel("Mean of Competence")
-        plt.ylabel("Base Classifiers")
-        save_pdf(plt, output_path + "Competence/", dataset + "_" + technique + "_" + noise + "_classe_" + str(classe))
+def get_perc(df1, df2):
+    perc = 0
+    if not df2.empty:
+        perc = 100*len(df1)/len(df2)
+    
+    return perc
 
 
 def competence_neighbors(path, dataset, gen, technique, ks):
     folder = input_path + gen + "/" + dataset + "/" + path + "/" +dataset + "_" + technique + "_" + path + "_Noise_"
 
     for noise in noise_params:
+        print("Noise: {}".format(noise))
         # Read the data
         data = pd.read_csv(folder+noise+".csv")
         data.drop(data.columns[0], axis=1, inplace=True)
@@ -78,8 +63,9 @@ def competence_neighbors(path, dataset, gen, technique, ks):
 
             for k in ks:
                 print("Neighbors: ", k)
-                minors = []
-                data_comb, ind = [], []
+                minors = [] # Relative Minority Class
+                majorities = [] # Reltive Majority Class
+                ind = [] # Index of nieghbors
 
                 # Get indexes and values for each neighbor
                 for index, row in zip(indexes, neighbors_df.values):
@@ -93,52 +79,118 @@ def competence_neighbors(path, dataset, gen, technique, ks):
                         ind.append(index)
 
                         # Get the neighbors
-                        values = list(row)
-                        data_comb.append(values)
+                        values = key_neighbors[0]
+                        majorities.append([values])
 
                         # Get minority classes
                         minor = list(key_neighbors[1:])
                         minors.append([minor])
 
-                # # Transform the data for K neighbors in Dataframe
-                # data_k = pd.DataFrame(data_comb, columns=neighbors_df.columns)
-
                 # Filter the competences and original data
                 filter_df = data_classe[data_classe.index.isin(ind)]
-                
-                # Replace NaN to zero
-                filter_df.replace(np.NaN, 0, inplace=True)
 
                 if not filter_df.empty:
                     # Adding minority classes in RoC on dataframe
                     filter_df.loc[:,'Minor'] = minors
+                    filter_df.loc[:,'Major'] = majorities
 
-                    # Filter the dataframe to predictions equal to minor class 
-                    minor_predictions = filter_df[filter_df.apply(lambda x: x['Predictions'] in x['Minor'], axis=1)]
+                    # Get competences from minority and majority predictions
+                    minor_target = filter_df[filter_df.apply(lambda x: x['Target'] in x['Minor'], axis=1)]
+                    major_target = filter_df[filter_df['Target'] == filter_df['Major']]
+                    outer_target = filter_df.loc[set(filter_df.index) - set(minor_target.index) - set(major_target.index)]
 
-                    if not minor_predictions.empty:
-                        # Get competences from correct and wrong predictions
-                        correct_df = minor_predictions[minor_predictions['Target'] == minor_predictions['Predictions']]
-                        error_df = minor_predictions[minor_predictions['Target'] != minor_predictions['Predictions']]
+                    means_minor = dataframe_pred(minor_target, minor_target.columns).mean(axis=0)
+                    means_major = dataframe_pred(major_target, major_target.columns).mean(axis=0)
+                    means_outer = dataframe_pred(outer_target, outer_target.columns).mean(axis=0)
 
-                        # Desconsidering two last columns in evaluation
-                        correct_df = correct_df.filter(like='B',axis=1)
-                        error_df = error_df.filter(like='B',axis=1)
+                    # Concat hits and errors for each classifier
+                    competences_df = pd.concat([means_minor, means_major, means_outer], axis=1)
+                    competences_df.columns = ["Minor", "Major", "Outer"]
 
-                        # Get mean of each base classifier
-                        means_hits, means_error = correct_df.mean(axis=0), error_df.mean(axis=0)
+                    competences_df.replace(np.NaN, 0, inplace=True)
 
-                        # Concat hits and errors for each classifier
-                        competences_df = pd.concat([means_hits, means_error], axis=1)
-                        competences_df.columns = ["Hits", "Errors"]
+                    competences_df.plot(kind='bar')
+                    plt.title("Technique: {} - Noise {} - Classe: {} - Neighbors {}".format(technique, noise, classe, k))
+                    plt.ylabel("Mean of Competence")
+                    plt.xlabel("Base Classifiers")
+                    # plt.show()
+                    save_pdf(plt, output_path + "Competence/"+technique+"/", dataset + "_" + technique + "_" + noise + "_classe_" + str(classe))
+                else:
+                    print("There's no neighbors.")
 
-                        competences_df.replace(np.NaN, 0, inplace=True)
 
-                        competences_df.plot(kind='bar')
-                        plt.title("Technique: {} - Noise {} - Classe: {}".format(technique, noise, classe))
-                        plt.xlabel("Mean of Competence")
-                        plt.ylabel("Base Classifiers")
-                        save_pdf(plt, output_path + "Competence/", dataset + "_" + technique + "_" + noise + "_classe_" + str(classe))
+def target_neighbors(path, dataset, gen, technique, ks, classe):
+    folder = input_path + gen + "/" + dataset + "/" + path + "/" +dataset + "_" + technique + "_" + path + "_Noise_"
+
+    for k in ks:
+        print("K: ", k)
+        noise_df = pd.DataFrame(index=["Minor", "Major", "Outer"], columns=noise_params)
+
+        for noise in noise_params:
+            print("Noise: {}".format(noise))
+            # Read the data
+            data = pd.read_csv(folder+noise+".csv")
+            data.drop(data.columns[0], axis=1, inplace=True)
+                
+            # Filter dataset based on class
+            data_classe = data[data['Target'] == classe]
+            indexes = data_classe.index
+                
+            # Get neighbors classes
+            neighbors_df = data_classe.filter(like='K', axis=1)
+
+            minors = [] # Relative Minority Class
+            majorities = [] # Reltive Majority Class
+            ind = [] # Index of nieghbors
+
+            # Get indexes and values for each neighbor
+            for index, row in zip(indexes, neighbors_df.values):
+                neighbors = Counter(row[:7]).most_common()
+
+                key_neighbors = [value[0] for value in neighbors]
+                freq_neighbors = [value[1] for value in neighbors]
+
+                if k in freq_neighbors:
+                    # Get indexes where the K is compatible
+                    ind.append(index)
+
+                    # Get the neighbors
+                    values = key_neighbors[0]
+                    majorities.append([values])
+
+                    # Get minority classes
+                    minor = list(key_neighbors[1:])
+                    minors.append([minor])
+
+            # Filter the competences and original data
+            filter_df = data_classe[data_classe.index.isin(ind)]
+
+            if not filter_df.empty:
+                # Adding minority classes in RoC on dataframe
+                filter_df.loc[:,'Minor'] = minors
+                filter_df.loc[:,'Major'] = majorities
+
+                # Get competences from minority and majority predictions
+                minor_target = filter_df[filter_df.apply(lambda x: x['Target'] in x['Minor'], axis=1)]
+                major_target = filter_df[filter_df['Target'] == filter_df['Major']]
+                outer_target = filter_df.loc[set(filter_df.index) - set(minor_target.index) - set(major_target.index)]
+
+                minor_pred = dataframe_pred(minor_target, minor_target.columns)
+                major_pred = dataframe_pred(major_target, major_target.columns)
+                outer_pred = dataframe_pred(outer_target, outer_target.columns)
+
+                noise_df.loc['Minor', noise] = get_perc(minor_pred, minor_target)
+                noise_df.loc['Major', noise] = get_perc(major_pred, major_target)
+                noise_df.loc['Outer', noise] = get_perc(outer_pred, outer_target)
+
+        noise_df.replace(np.NaN, 0, inplace=True)
+
+        noise_df.T.plot(kind='bar')
+        plt.title("Technique: {} - Classe: {} - Neighbors {}".format(technique, classe, k))
+        plt.ylabel("Accuracy")
+        plt.xlabel("Noise Level")
+        # plt.show()
+        save_pdf(plt, output_path + "Competence/Accuracy/", dataset + "_" + technique + "_classe_" + str(classe) + "_Neighbors_" + str(k))    
 
 
 def fold_class(dataset, gen, techniques, noise):
@@ -212,7 +264,6 @@ def class_per_noise_technique(gen, dataset, technique):
         percentage_class = (class_match["Match"]/class_count["Counts"])*100
         data_noises[noise] = percentage_class
     
-    print(data_noises.T)
     data_noises.T.plot(kind='bar')
     plt.xlabel("Noise level")
     plt.ylabel("Accuracy")
@@ -222,7 +273,7 @@ def class_per_noise_technique(gen, dataset, technique):
     save_pdf(plt, output_path, dataset + "_" + technique)
 
 
-def neighbor_per_noise(gen, dataset, technique, classe):
+def accuracy_neighbor_per_noise(gen, dataset, technique, classe):
     k_neighbors = [str(k) for k in range(2, 8)]
     neigh_noise = pd.DataFrame(columns=list(map(str, range(2,8))))
     path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
@@ -255,113 +306,15 @@ def neighbor_per_noise(gen, dataset, technique, classe):
         for k in k_neighbors:
             data_neighbors = pd.DataFrame(data_comb[k], columns=data.columns)
             neighbors_match = data_neighbors[(data_neighbors["Target"] == data_neighbors["Predictions"])].reset_index(drop=True)
-            neigh_noise.set_value(str(noise), str(k), len(neighbors_match.index))
+            
+            if len(data_neighbors) > 0:
+                accuracy = (len(neighbors_match)/len(data_neighbors))*100
+            else:
+                accuracy = "No neighbors"
+            
+            neigh_noise.set_value(str(noise), str(k), accuracy)
 
     return neigh_noise.T
-
-
-def neighbors_k_techniques(gen, dataset, technique, ks, classe):
-    neigh_noise = pd.DataFrame()
-    path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
-
-    #Read the csv according to technique
-    minors = []
-    for noise in noise_params:
-        data = pd.read_csv(path_data+noise+".csv")
-        data.drop(data.columns[0], axis=1, inplace=True)
-
-        # Filter dataset based on class
-        data = data[data['Target'] == classe]
-
-        for k in ks:
-            data_comb = []
-            for row in data.values:
-                neighbors = Counter(row[:7]).most_common()
-
-                # Keys from neighbors
-                key_neighbors = [value[0] for value in neighbors]
-                # Value from neighbors
-                freq_neighbors = [value[1] for value in neighbors]
-                if k in freq_neighbors:
-                    minor = key_neighbors[1:]
-                    # minors.extend(minor)
-                    values = list(row) + [minor]
-                    data_comb.append(values)
-
-            # Transform the data for K neighbors in Dataframe
-            columns = np.append(data.columns, "Minor")
-            data_k = pd.DataFrame(data_comb, columns=columns)
-
-            # Filter the dataframe to predictions equal to minor class 
-            minor_predictions = data_k[data_k.apply(lambda x: x['Predictions'] in x['Minor'], axis=1)]
-            correct_predictions = minor_predictions[minor_predictions['Target'] == minor_predictions['Predictions']]
-            error_predictions = minor_predictions[minor_predictions['Target'] != minor_predictions['Predictions']]
-
-            # Evaluate the error classes
-            minors = Counter(error_predictions['Predictions'])
-
-            if len(minor_predictions) > 0:
-                perc_minor = (len(correct_predictions)/len(minor_predictions))*100
-            else:
-                perc_minor = 0
-
-            neigh_noise.set_value(str(noise), "Min. Correct({})".format(str(k)), round(perc_minor,2))
-            neigh_noise.set_value(str(noise), "# Instances({})".format(str(k)), len(data_k))
-            neigh_noise.set_value(str(noise), "# Pred. Minority({})".format(str(k)), len(minor_predictions))
-            neigh_noise.set_value(str(noise), "Errors Minority({})".format(str(k)), 100 - round(perc_minor,2))
-    
-    print(neigh_noise)
-
-
-def neighbors_techniques(gen, dataset, technique, classe):
-    path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
-    neigh_noise = pd.DataFrame(columns=list(map(str, range(2,8))))
-    neigh_size = pd.DataFrame(columns=list(map(str, range(2,8))))
-    k_neighbors = [str(k) for k in range(2, 8)]
-
-    #Read the csv according to technique
-    for noise in noise_params:
-        data = pd.read_csv(path_data+noise+".csv")
-        data.drop(data.columns[0], axis=1, inplace=True)
-        
-        # Filter dataset based on class
-        data = data[data['Target'] == classe]
-
-        data_comb = dict((str(k), []) for k in k_neighbors)
-        for row in data.values:
-            neighbors = Counter(row[:7])
-            freq_neighbors = neighbors.values()
-
-            if 2 in freq_neighbors:
-                data_comb["2"].append(list(row))
-            elif 3 in freq_neighbors:
-                data_comb["3"].append(list(row))
-            elif 4 in freq_neighbors:
-                data_comb["4"].append(list(row))
-            elif 5 in freq_neighbors:
-                data_comb["5"].append(list(row))
-            elif 6 in freq_neighbors:
-                data_comb["6"].append(list(row))
-            else:
-                data_comb["7"].append(list(row))
-
-        for k in k_neighbors:
-            data_neighbors = pd.DataFrame(data_comb[k], columns=data.columns)
-            size_data = len(data_neighbors)
-
-            # Filter dataset in cases where the Prediction match with Target
-            hit_data = data_neighbors[data_neighbors['Target'] == data_neighbors['Predictions']]
-
-            if size_data > 0:
-                acc_tech = round((len(hit_data)/len(data_neighbors))*100, 2)
-            else:
-                acc_tech = 0
-            
-            neigh_noise.set_value(str(noise), str(k), acc_tech)
-            neigh_size.set_value(str(noise), str(k), [len(hit_data), size_data])
-
-    print(neigh_noise)
-    print(neigh_size)
 
 
 def confusion_classes(gen, dataset, technique):
@@ -408,8 +361,12 @@ if __name__ == "__main__":
             print("Dataset: ", dataset)
             for technique in techniques:
                 print("Technique: ", technique)
-                competence_neighbors("Competence", dataset, gen, technique, range(5,7))
+                # competence_neighbors("Competence", dataset, gen, technique, range(5,7))
+                # class_per_noise_technique(gen, dataset, technique)
                 # for noise in noise_params:
-                #     print("Noise: {}%".format(noise))
-                    # competence_classifiers("Competence", dataset, gen, technique, noise)
+                for classe in range(0,5): #Minority and Majority Class
+                    print("Classe: ", classe)
+                    target_neighbors("Competence", dataset, gen, technique, range(5,7), classe)
+                #     neigh = accuracy_neighbor_per_noise(gen, dataset, technique, classe)
+                #     print(neigh)
                         

@@ -13,7 +13,8 @@ output_path = os.path.dirname(__file__) + '/Graphs/'
 input_path = os.path.dirname(__file__) + '/Results/'
 markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8']
 
-def dataframe_pred(dataframe, columns):
+
+def dataframe_pred(dataframe, columns, scenario):
     # Number of Base classifiers
     cols_B = [col for col in columns if "B" in col]
     
@@ -26,6 +27,7 @@ def dataframe_pred(dataframe, columns):
             df_out = data_pred.filter(like='B',axis=1)
             return df_out
 
+    print("There's no target in {}.".format(scenario))
     out = pd.DataFrame(0, index=np.arange(len(cols_B)), columns=cols_B)
 
     return out
@@ -42,6 +44,8 @@ def get_perc(df1, df2):
 def competence_neighbors(path, dataset, gen, technique, ks):
     folder = input_path + gen + "/" + dataset + "/" + path + "/" +dataset + "_" + technique + "_" + path + "_Noise_"
 
+    print("Technique: ", technique)
+
     for noise in noise_params:
         print("Noise: {}".format(noise))
         # Read the data
@@ -56,7 +60,8 @@ def competence_neighbors(path, dataset, gen, technique, ks):
             
             # Filter dataset based on class
             data_classe = data[data['Target'] == classe]
-            indexes = data_classe.index
+            # Reset indexes
+            data_classe.reset_index(drop=True, inplace=True)
             
             # Get neighbors classes
             neighbors_df = data_classe.filter(like='K', axis=1)
@@ -68,7 +73,7 @@ def competence_neighbors(path, dataset, gen, technique, ks):
                 ind = [] # Index of nieghbors
 
                 # Get indexes and values for each neighbor
-                for index, row in zip(indexes, neighbors_df.values):
+                for index, row in enumerate(neighbors_df.values):
                     neighbors = Counter(row[:7]).most_common()
 
                     key_neighbors = [value[0] for value in neighbors]
@@ -88,6 +93,7 @@ def competence_neighbors(path, dataset, gen, technique, ks):
 
                 # Filter the competences and original data
                 filter_df = data_classe[data_classe.index.isin(ind)]
+                size_filter = len(filter_df)
 
                 if not filter_df.empty:
                     # Adding minority classes in RoC on dataframe
@@ -99,9 +105,9 @@ def competence_neighbors(path, dataset, gen, technique, ks):
                     major_target = filter_df[filter_df['Target'] == filter_df['Major']]
                     outer_target = filter_df.loc[set(filter_df.index) - set(minor_target.index) - set(major_target.index)]
 
-                    means_minor = dataframe_pred(minor_target, minor_target.columns).mean(axis=0)
-                    means_major = dataframe_pred(major_target, major_target.columns).mean(axis=0)
-                    means_outer = dataframe_pred(outer_target, outer_target.columns).mean(axis=0)
+                    means_minor = dataframe_pred(minor_target, minor_target.columns, "Minor").sum(axis=0)/size_filter
+                    means_major = dataframe_pred(major_target, major_target.columns, "Major").sum(axis=0)/size_filter
+                    means_outer = dataframe_pred(outer_target, outer_target.columns, "Outer").sum(axis=0)/size_filter
 
                     # Concat hits and errors for each classifier
                     competences_df = pd.concat([means_minor, means_major, means_outer], axis=1)
@@ -111,13 +117,13 @@ def competence_neighbors(path, dataset, gen, technique, ks):
 
                     competences_df.plot(kind='bar')
                     plt.title("Technique: {} - Noise {} - Classe: {} - Neighbors {}".format(technique, noise, classe, k))
-                    plt.ylabel("Mean of Competence")
+                    plt.ylabel("Mean of Competence (Correctly Predicted)")
                     plt.xlabel("Base Classifiers")
                     # plt.show()
-                    save_pdf(plt, output_path + "Competence/"+technique+"/", dataset + "_" + technique + "_" + noise + "_classe_" + str(classe))
+                    save_pdf(plt, output_path + "Competence/"+technique+"/", dataset + "_" + technique + "_" + noise + "_classe_" + str(classe) + "_K_" + str(k))
+
                 else:
                     print("There's no neighbors.")
-
 
 def target_neighbors(path, dataset, gen, technique, ks, classe):
     folder = input_path + gen + "/" + dataset + "/" + path + "/" +dataset + "_" + technique + "_" + path + "_Noise_"
@@ -175,9 +181,9 @@ def target_neighbors(path, dataset, gen, technique, ks, classe):
                 major_target = filter_df[filter_df['Target'] == filter_df['Major']]
                 outer_target = filter_df.loc[set(filter_df.index) - set(minor_target.index) - set(major_target.index)]
 
-                minor_pred = dataframe_pred(minor_target, minor_target.columns)
-                major_pred = dataframe_pred(major_target, major_target.columns)
-                outer_pred = dataframe_pred(outer_target, outer_target.columns)
+                minor_pred = dataframe_pred(minor_target, minor_target.columns, "Minor")
+                major_pred = dataframe_pred(major_target, major_target.columns, "Major")
+                outer_pred = dataframe_pred(outer_target, outer_target.columns, "Outer")
 
                 noise_df.loc['Minor', noise] = get_perc(minor_pred, minor_target)
                 noise_df.loc['Major', noise] = get_perc(major_pred, major_target)
@@ -360,13 +366,12 @@ if __name__ == "__main__":
         for dataset in datasets:
             print("Dataset: ", dataset)
             for technique in techniques:
-                print("Technique: ", technique)
-                # competence_neighbors("Competence", dataset, gen, technique, range(5,7))
+                competence_neighbors("Competence", dataset, gen, technique, range(5,7))
                 # class_per_noise_technique(gen, dataset, technique)
                 # for noise in noise_params:
-                for classe in range(0,5): #Minority and Majority Class
-                    print("Classe: ", classe)
-                    target_neighbors("Competence", dataset, gen, technique, range(5,7), classe)
+                # for classe in range(0,5): #Minority and Majority Class
+                #     print("Classe: ", classe)
+                #     target_neighbors("Competence", dataset, gen, technique, range(5,7), classe)
                 #     neigh = accuracy_neighbor_per_noise(gen, dataset, technique, classe)
                 #     print(neigh)
                         

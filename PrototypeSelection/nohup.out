@@ -1,0 +1,892 @@
+~~~~~~~~~~~ Database : HH103 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: EditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+~~~~~~~~~~~ Database : HH103 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: CondensedNearestNeighbour *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+
+========== Done ==========
+
+
+~~~~~~~~~~~ Database : HH103 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: RepeatedEditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH103 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: AllKNN *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH103 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: TomekLinks *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH103 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: NeighbourhoodCleaningRule *************
+======== Noise Parameter --> 00% ========
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+
+========== Done ==========
+
+~~~~~~~~~~~ Database : HH124 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: EditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH124 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: CondensedNearestNeighbour *************
+======== Noise Parameter --> 00% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH124 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: RepeatedEditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH124 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: AllKNN *************
+======== Noise Parameter --> 00% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+  ConvergenceWarning)
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH124 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: TomekLinks *************
+======== Noise Parameter --> 00% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH124 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: NeighbourhoodCleaningRule *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+  ConvergenceWarning)
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH129 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: EditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+  ConvergenceWarning)========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH129 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: CondensedNearestNeighbour *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+  ConvergenceWarning)
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH129 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: RepeatedEditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+  ConvergenceWarning)========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH129 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: AllKNN *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+  ConvergenceWarning)
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH129 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: TomekLinks *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : HH129 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: NeighbourhoodCleaningRule *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+  ConvergenceWarning)
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2008 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: EditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2008 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: CondensedNearestNeighbour *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+  ConvergenceWarning)
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2008 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: RepeatedEditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2008 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: AllKNN *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2008 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: TomekLinks *************
+======== Noise Parameter --> 00% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2008 ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: NeighbourhoodCleaningRule *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2009Spring ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: EditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2009Spring ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: CondensedNearestNeighbour *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+  ConvergenceWarning)
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2009Spring ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: RepeatedEditedNearestNeighbours *************
+======== Noise Parameter --> 00% ========
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2009Spring ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: AllKNN *************
+======== Noise Parameter --> 00% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2009Spring ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: TomekLinks *************
+======== Noise Parameter --> 00% ========
+
+
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+  ConvergenceWarning)
+========== Done ==========
+
+
+
+~~~~~~~~~~~ Database : Kyoto2009Spring ~~~~~~~~~~~
+*********** Gen Method: SGH *************
+*********** Proto Selection Method: NeighbourhoodCleaningRule *************
+======== Noise Parameter --> 00% ========
+  ConvergenceWarning)
+========== Done ==========
+
+======== Noise Parameter --> 10% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 20% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 30% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 40% ========
+
+========== Done ==========
+
+======== Noise Parameter --> 50% ========
+
+
+========== Done ==========
+

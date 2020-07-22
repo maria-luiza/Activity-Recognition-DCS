@@ -10,7 +10,7 @@ from nonparametric_tests import friedman_test
 from scipy.stats import wilcoxon
 
 noise_params = ['00', '10', '20', '30', '40', '50']
-proto_legends = ["ENN", "CNN", "RENN", "AllKNN", "TomekLinks", "NeighbourhoodCleaningRule"]
+proto_legends = ["ENN", "CNN", "RENN", "AllKNN", "Tomek Links", "NCR"]
 metric = "Accuracy"
 
 
@@ -51,9 +51,9 @@ def plotterDatasetSelection(dicts, dataset, dynamic, prototypeSelections):
     legend_font = FontProperties()
     legend_font.set_size(9)
 
-    df = pd.DataFrame(columns = prototypeSelections, index = noise_params)
-    for protoTech in prototypeSelections:
-        df.loc[:, protoTech] = dicts[protoTech][dynamic]
+    df = pd.DataFrame(columns = proto_legends, index = noise_params)
+    for i, protoTech in enumerate(prototypeSelections):
+        df.loc[:, proto_legends[i]] = dicts[protoTech][dynamic]
 
     df.plot(
         kind = "line",
@@ -67,6 +67,8 @@ def plotterDatasetSelection(dicts, dataset, dynamic, prototypeSelections):
     plt.xlabel('Noise per rate (%)')
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.11), ncol=len(prototypeSelections), labels=proto_legends, prop=legend_font)
     save_pdf(plt, output, dataset + "_" + dynamic + "_" + metric)
+
+    return df
 
 def plotterPrototypeSelection(dicts, dataset, prototypeSelection):
 
@@ -97,15 +99,23 @@ if __name__ == '__main__':
     proto_selections = ["EditedNearestNeighbours", "CondensedNearestNeighbour", "RepeatedEditedNearestNeighbours", "AllKNN", "TomekLinks", "NeighbourhoodCleaningRule"]
     datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
 
+    latex_repos = root + "/Graphs/Latex/"
+
     for dataset in datasets:
         print("Dataset >>> {} <<<".format(dataset))
         for gen_method in gen_methods:
             df_mean, df_std = datasetPrototypeSelection(dataset, gen_method, ds_methods, proto_selections)
             
+            dynamic_l = []
             for ds_method in ds_methods:
                 print("Dynamic Selection >>> {} <<<".format(ds_method))
-                plotterDatasetSelection(df_mean, dataset, ds_method, proto_selections)
+                df = plotterDatasetSelection(df_mean, dataset, ds_method, proto_selections)
+                dynamic_l.append(df)
             
+            df = pd.concat(dict(zip(ds_methods, dynamic_l)), axis=1)
+            with open(latex_repos + 'ProtoSelec_.'+ dataset +'.txt','w') as tf:
+                tf.write(df.T.to_latex(index=True))
+
             print("\n")
             for proto_tech in proto_selections:
                 print("Prototype Selection >>> {} <<<".format(proto_tech))

@@ -2,15 +2,16 @@ import os
 import numpy as np
 import pandas as pd
 import read_results
+import matplotlib
+import matplotlib.pyplot as plt
 from collections import Counter
 from plotter import save_pdf, plot_dataframes, plot_confusion_matrix
-import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 
 
 noise_params = ['00', '10', '20', '30', '40', '50']
 output_path = os.path.dirname(__file__) + '/Graphs/'
-input_path = os.path.dirname(__file__) + '/Results/'
+input_path = os.path.dirname(__file__) + '/Results/ImbalancedData/'
 markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8']
 
 
@@ -32,14 +33,12 @@ def dataframe_pred(dataframe, columns, scenario):
 
     return out
 
-
 def get_perc(df1, df2):
     perc = 0
     if not df2.empty:
         perc = 100*len(df1)/len(df2)
     
     return perc
-
 
 def competence_neighbors(path, dataset, gen, technique, ks):
     folder = input_path + gen + "/" + dataset + "/" + path + "/" +dataset + "_" + technique + "_" + path + "_Noise_"
@@ -116,9 +115,10 @@ def competence_neighbors(path, dataset, gen, technique, ks):
                     competences_df.replace(np.NaN, 0, inplace=True)
 
                     competences_df.plot(kind='bar')
-                    plt.title("Technique: {} - Noise {} - Classe: {} - Neighbors {}".format(technique, noise, classe, k))
+                    plt.title("Technique: {}".format(technique))
                     plt.ylabel("Mean of Competence (Correctly Predicted)")
                     plt.xlabel("Base Classifiers")
+                    plt.ylim(0, 0.3)
                     # plt.show()
                     save_pdf(plt, output_path + "Competence/"+technique+"/", dataset + "_" + technique + "_" + noise + "_classe_" + str(classe) + "_K_" + str(k))
 
@@ -198,7 +198,6 @@ def target_neighbors(path, dataset, gen, technique, ks, classe):
         # plt.show()
         save_pdf(plt, output_path + "Competence/Accuracy/", dataset + "_" + technique + "_classe_" + str(classe) + "_Neighbors_" + str(k))    
 
-
 def fold_class(dataset, gen, techniques, noise):
     k_neighbors = [str(k) for k in range(2, 8)]
     neigh_noise = pd.DataFrame(columns=list(map(str, range(2,8))))
@@ -248,10 +247,11 @@ def fold_class(dataset, gen, techniques, noise):
     
         plt.show()    
 
-
 def class_per_noise_technique(gen, dataset, technique):
     path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
     data_noises = pd.DataFrame(columns = noise_params)
+
+    cmap=matplotlib.colors.LinearSegmentedColormap.from_list("", ['black', 'silver'])
 
     print(">>>>>> " + technique + " <<<<<<<")
 
@@ -270,14 +270,13 @@ def class_per_noise_technique(gen, dataset, technique):
         percentage_class = (class_match["Match"]/class_count["Counts"])*100
         data_noises[noise] = percentage_class
     
-    data_noises.T.plot(kind='bar')
+    data_noises.T.plot(kind='bar', cmap=cmap)
     plt.xlabel("Noise level")
     plt.ylabel("Accuracy")
     plt.xticks(rotation='horizontal')
     plt.legend(bbox_to_anchor=(0.5, 1.1), loc='upper center', ncol=len(class_match.index))
     # plt.show()
     save_pdf(plt, output_path, dataset + "_" + technique)
-
 
 def accuracy_neighbor_per_noise(gen, dataset, technique, classe):
     k_neighbors = [str(k) for k in range(2, 8)]
@@ -322,7 +321,6 @@ def accuracy_neighbor_per_noise(gen, dataset, technique, classe):
 
     return neigh_noise.T
 
-
 def confusion_classes(gen, dataset, technique):
     path_data = input_path + gen + "/" + dataset + "/" + dataset + "_" + technique + "_Test_Noise_"
 
@@ -335,8 +333,7 @@ def confusion_classes(gen, dataset, technique):
 
         cnf = confusion_matrix(data[['Target']], data[['Predictions']])
         plot_confusion_matrix(cnf, list(range(0,5)), normalize=True, title=technique+"_noise_"+noise)
-        save_pdf(plt, output_path + "Confusion/", dataset + "_" + technique + "_noise_" + noise)
-
+        # save_pdf(plt, output_path + "Confusion/", dataset + "_" + technique + "_noise_" + noise)
 
 def read_labels_roc(gen, dataset, std_result):
     # The free noise is the standard result
@@ -355,10 +352,9 @@ def read_labels_roc(gen, dataset, std_result):
         mean_roc[noise] = df['mean'].mean(axis=0)*100
     return mean_roc
 
-
 if __name__ == "__main__":
     datasets    = ['Kyoto2008']
-    gen_methods = ['SGH']
+    gen_methods = ['SGH_Competence']
     techniques = ['OLA', 'LCA']
 
     for gen in gen_methods:

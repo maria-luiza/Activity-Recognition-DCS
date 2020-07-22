@@ -230,8 +230,8 @@ if __name__ == '__main__':
     gen_methods = [SGH]
     ds_methods = [OLA, LCA, MCB, Rank, RandomForestClassifier]
     proto_selections = [EditedNearestNeighbours, CondensedNearestNeighbour, RepeatedEditedNearestNeighbours, AllKNN, TomekLinks, NeighbourhoodCleaningRule]
-    datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
-    # datasets = ['Kyoto2008']
+    # datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
+    datasets = ['Kyoto2008']
 
     for iteration, dataset in enumerate(datasets):
         for gen_method in gen_methods:

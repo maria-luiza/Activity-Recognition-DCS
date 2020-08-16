@@ -109,7 +109,7 @@ def gen_ensemble(X_train, y_train, gen_method, base, n_estimators):
 
 def ds_ensemble(X_train, y_train, pool_clf, dyn_sel_method):
     # Dynamic Selection method
-    ds_met = dyn_sel_method(pool_clf, selection_method='best')
+    ds_met = dyn_sel_method(pool_clf)
     # Train with DSel = Dtrain
     ds_met.fit(X_train, y_train)
 

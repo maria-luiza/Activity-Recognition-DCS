@@ -232,7 +232,8 @@ if __name__ == '__main__':
     datasets = ['Kyoto2008']
     gen_methods = ['SGH']
     metrics = ['MultiLabel-Fmeasure', 'Gmean', 'Accuracy', 'Precision', 'Recall', 'F1']
-    techniques = ['OLA', 'LCA', 'Rank', 'MCB', 'RandomForestClassifier']
+    # techniques = ['OLA', 'LCA', 'Rank', 'MCB', 'RandomForestClassifier']
+    techniques = ['KNORAU', 'KNORAE', 'DESKNN', 'DESP', 'DESMI', 'DESClustering' ,'RandomForestClassifier']
 
     data_type = "imbalanced"
     date_experiment = "2020-08-16"
@@ -249,7 +250,7 @@ if __name__ == '__main__':
         print("Generation >>>> {} <<<<".format(gen))
         for metric in metrics:
             for dataset in datasets:
-                # plot_results(date_experiment, gen, dataset, data_type, metric, techniques)
+                plot_results(date_experiment, gen, dataset, data_type, metric, techniques)
                 mean_accuracies, std_accuracies = read_mean_results(
                     date_experiment,
                     gen,

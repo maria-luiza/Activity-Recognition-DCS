@@ -21,9 +21,9 @@ from deslib.dcs.mcb import MCB
 # Selection phase (DES)
 from deslib.des.knora_u import KNORAU
 from deslib.des.knora_e import KNORAE
-from deslib.des.knop import KNOP
+from deslib.des.des_mi import DESMI
 from deslib.des.des_knn import DESKNN
-from deslib.des.meta_des import METADES
+from deslib.des.des_clustering import DESClustering
 from deslib.des.des_p import DESP
 
 # Imbalancing Learning
@@ -213,14 +213,16 @@ def experiment(folds, iteration, activities_list, labels_dict, dyn_selector, noi
 if __name__ == '__main__':
     root = os.path.dirname(__file__)
 
-    gen_methods = [AdaBoostClassifier, BaggingClassifier, SGH]
+    # gen_methods = [AdaBoostClassifier, BaggingClassifier, SGH]
+    gen_methods = [SGH]
     ds_methods_dcs = [OLA, LCA, MCB, Rank, RandomForestClassifier]
-    ds_methods_des = [KNORAU, KNORAE, KNOP, DESKNN, DESP, METADES]
+    ds_methods_des = [KNORAU, KNORAE, DESKNN, DESP, DESMI, DESClustering]
 
-    ds_methods = ds_methods_dcs #++ ds_methods_des
+    ds_methods = ds_methods_des #++ ds_methods_des
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
 
-    datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
+    # datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
+    datasets = ['Kyoto2008']
 
     for iteration, dataset in enumerate(datasets):
         for ds_method in ds_methods:
@@ -228,8 +230,8 @@ if __name__ == '__main__':
                 # for imb_methd in imb_methods:
                 if dataset != '.DS_Store':
                     print('\n\n~~ Database : ' + dataset + ' ~~')
-                    print('** Method : ' + str(ds_method).split('.')[-1].split('\'')[0] + ' **\n')
-                    print('** Gen Method: %s **' % (str(gen_method).split('.')[-1].split('\'')[0]))
+                    print('** Gen Method: %s' % (str(gen_method).split('.')[-1].split('\'')[0]))
+                    print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))
 
                     folds_list, activities, examples_by_class = load_dataset(dataset)
                     for noise_level in range(0, 6):

@@ -176,8 +176,8 @@ def plot_results(date_exp, gen, dataset, imb_method, metric, techniques):
     output_path = root + '/Graphs/' + date_exp + '/' + metric + '/' + gen + '/'
 
     # Plot configuration
-    markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8']
-    colors = ['0.4', '0.6', 'lightcoral', 'red', 'crimson', 'maroon', 'orangered', 'tomato', 'sienna']
+    markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8', 'v', '.']
+    colors = ['0.4', '0.6', 'lightcoral', 'red', 'crimson', 'maroon', 'orangered', 'tomato', 'sienna', 'salmon', 'coral']
 
     mean_accuracies, std_acc = read_mean_results(
         date_exp, gen, dataset, imb_method, noise_params, metric, techniques)
@@ -232,8 +232,12 @@ if __name__ == '__main__':
     datasets = ['Kyoto2008']
     gen_methods = ['SGH']
     metrics = ['MultiLabel-Fmeasure', 'Gmean', 'Accuracy', 'Precision', 'Recall', 'F1']
-    # techniques = ['OLA', 'LCA', 'Rank', 'MCB', 'RandomForestClassifier']
-    techniques = ['KNORAU', 'KNORAE', 'DESKNN', 'DESP', 'DESMI', 'DESClustering' ,'RandomForestClassifier']
+
+    baseline = ['RandomForestClassifier']
+    techniques_dcs = ['OLA', 'LCA', 'Rank', 'MCB']
+    techniques_des = ['KNORAU', 'KNORAE', 'DESKNN', 'DESP', 'DESMI', 'DESClustering']
+
+    techniques = baseline + techniques_dcs + techniques_des
 
     data_type = "imbalanced"
     date_experiment = "2020-08-16"
@@ -251,30 +255,30 @@ if __name__ == '__main__':
         for metric in metrics:
             for dataset in datasets:
                 plot_results(date_experiment, gen, dataset, data_type, metric, techniques)
-                mean_accuracies, std_accuracies = read_mean_results(
-                    date_experiment,
-                    gen,
-                    dataset, data_type,
-                    noise_params,
-                    metric,
-                    techniques
-                )
+                # mean_accuracies, std_accuracies = read_mean_results(
+                #     date_experiment,
+                #     gen,
+                #     dataset, data_type,
+                #     noise_params,
+                #     metric,
+                #     techniques
+                # )
 
-                if metric == "Accuracy":
-                    dictionary = mean_accuracies.to_dict(orient='index')
-                    dataset_folds = {}
-                    for k in dictionary:
-                        dataset_folds[k] = [dictionary[k][column_name] for column_name in mean_accuracies.columns]
-
-                    # Friedman Tests
-                    for key in friedmanT:
-                        friedmanT[key].append(dataset_folds[key])
-
-                    for key, value in friedmanT.items():
-                        value = list(zip(*value))
-                        # OLA, LCA, RANK, MCB, Random Forest
-                        Fvalue, pvalue, ranks, pivots = friedman_test(value[0], value[1], value[2], value[3], value[4])
-
-                        plot_nemenyi(date_experiment, gen, ranks, techniques, key)
-
-            plot_free_noise(date_experiment, gen, data_type, datasets, metric, techniques)
+            #     if metric == "Accuracy":
+            #         dictionary = mean_accuracies.to_dict(orient='index')
+            #         dataset_folds = {}
+            #         for k in dictionary:
+            #             dataset_folds[k] = [dictionary[k][column_name] for column_name in mean_accuracies.columns]
+            #
+            #         # Friedman Tests
+            #         for key in friedmanT:
+            #             friedmanT[key].append(dataset_folds[key])
+            #
+            #         for key, value in friedmanT.items():
+            #             value = list(zip(*value))
+            #             # OLA, LCA, RANK, MCB, Random Forest
+            #             Fvalue, pvalue, ranks, pivots = friedman_test(value[0], value[1], value[2], value[3], value[4])
+            #
+            #             plot_nemenyi(date_experiment, gen, ranks, techniques, key)
+            #
+            # plot_free_noise(date_experiment, gen, data_type, datasets, metric, techniques)

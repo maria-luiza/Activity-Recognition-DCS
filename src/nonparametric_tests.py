@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*- 
-import numpy as np
+# -*- coding: utf-8 -*-
 import scipy as sp
 import scipy.stats as st
-from scipy.stats import wilcoxon
+
 
 def friedman_test(*args):
     """
@@ -39,18 +38,15 @@ def friedman_test(*args):
     for i in range(n):
         row = [col[i] for col in args]
         row_sort = sorted(row, reverse=True)
-        rankings.append([row_sort.index(v) + 1 + (row_sort.count(v)-1)/2. for v in row])
-    #print rankings
+        rankings.append([row_sort.index(v) + 1 + (row_sort.count(v) - 1) / 2. for v in row])
+    # print rankings
     rankings_avg = [sp.mean([case[j] for case in rankings]) for j in range(k)]
-    rankings_cmp = [r/sp.sqrt(k*(k+1)/(6.*n)) for r in rankings_avg]
+    rankings_cmp = [r / sp.sqrt(k * (k + 1) / (6. * n)) for r in rankings_avg]
 
-    chi2 = ((12*n)/float((k*(k+1))))*((sp.sum(r**2 for r in rankings_avg))-((k*(k+1)**2)/float(4)))
-    iman_davenport = ((n-1)*chi2)/float((n*(k-1)-chi2))
+    chi2 = ((12 * n) / float((k * (k + 1)))) * (
+            (sp.sum(r ** 2 for r in rankings_avg)) - ((k * (k + 1) ** 2) / float(4)))
+    iman_davenport = ((n - 1) * chi2) / float((n * (k - 1) - chi2))
 
-    p_value = 1 - st.f.cdf(iman_davenport, k-1, (k-1)*(n-1))
+    p_value = 1 - st.f.cdf(iman_davenport, k - 1, (k - 1) * (n - 1))
 
     return iman_davenport, p_value, rankings_avg, rankings_cmp
-
-
-# def wilcoxon_test(*args):
-    

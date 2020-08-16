@@ -1,27 +1,26 @@
 import os
-import re
 import docx
 import shlex
 import pandas as pd
 import numpy as np
 import pickle
-import matplotlib.pyplot as plt
-from collections import Counter
-from matplotlib import cm
+from datetime import datetime
 from matplotlib.backends.backend_pdf import PdfPages
 
+# Metrics for evaluation
+from sklearn.calibration import CalibratedClassifierCV
 
-datasets = ['HH103', 'HH105', 'HH110', 'HH124', 'HH125', 'HH126', 'HH129', 'Kyoto2008', 'Kyoto2009Spring', 'Tulum2009']
-noise_params = ['00', '10', '20', '30', '40', '50']
-root = os.path.dirname(__file__)
+root = "../"
+
 
 def load_folds(file_name):
-    file_path = os.path.dirname(__file__) + '/folds/' + file_name
+    file_path = root + '/folds/' + file_name
     with open(file_path, 'rb') as file:
         _fold = pickle.load(file)
         unique_activities_list = pickle.load(file)
         file.close()
     return _fold, unique_activities_list
+
 
 def load_dataset(dataset_name):
     folds, activities_list = load_folds(dataset_name)
@@ -50,34 +49,39 @@ def string_to_confusion_matrix(conf_matrix):
     return conf_matrix
 
 
-def build_results_df(metrics, results, labels):
-    results_df  =  pd.DataFrame(columns = metrics, \
-                                index = ['Fold_' + str(f) for f in range(1,6)] + ['Mean'])
+def build_results_df(metrics, folds, results, labels):
+    results_df = pd.DataFrame(columns=metrics, index=['Fold_' + str(f) for f in range(1, len(folds) + 1)] + ['Mean'])
+    acc_class = pd.DataFrame(columns=labels, index=['Fold_' + str(f) for f in range(1, len(folds) + 1)] + ['Mean'])
 
-    acc_class   = pd.DataFrame(columns = labels, \
-                                index = ['Fold_' + str(f) for f in range(1,6)] + ['Mean'])
-    
-    for functions in results:
-        functions = list(functions)
-        dicts = functions.pop(2)
-        results_df.loc[functions[0]] = functions[1:]
+    for i, functions in enumerate(results):
+        functions = functions[0]
+        acc_by_class = functions.pop(-1)
+        results_df.loc[folds[i]] = functions
 
-        for key in dicts.keys():
-            acc_class.loc[functions[0], key] = dicts[key]
+        for key in acc_by_class.keys():
+            acc_class.loc[folds[i], key] = acc_by_class[key]
 
-    acc_class.loc['Mean']   = acc_class.mean(axis = 0)
-    acc_class               = acc_class.fillna(0)
-    results_df.loc['Mean']  = results_df.mean(axis = 0)
+    acc_class.loc['Mean'] = acc_class.mean(axis=0)
+    acc_class = acc_class.fillna(0)
+    results_df.loc['Mean'] = results_df.mean(axis=0)
 
-    return acc_class, results_df.reindex(['Fold_' + str(f) for f in range(1,6)] + ['Mean'])
+    return acc_class, results_df.reindex(['Fold_' + str(f) for f in range(1, 6)] + ['Mean'])
+
 
 def save_results_df(accuracy_df, dataset, imb_method, gen_method, noise, technique):
-    file_path = root + '/Results/' + imb_method + '/' + gen_method + '/' + dataset + '/'
+    date_time = datetime.today().strftime('%Y-%m-%d')
+
+    if imb_method == "None":
+        imb_method = "imbalanced"
+
+    file_path = root + '/Results/' + date_time + '/' + imb_method + '/' + gen_method + '/' + dataset + '/'
     if not os.path.exists(file_path):
         os.makedirs(file_path)
+
     noise = "%02d" % int(noise)
     noise = noise[1] + noise[0]
-    accuracy_df.to_csv(file_path + technique + '_Noise_' + noise + '.csv', sep = ',')
+    accuracy_df.to_csv(file_path + technique + '_Noise_' + noise + '.csv', sep=',')
+
 
 def save_pdf(plot, path, name):
     if not os.path.exists(path):
@@ -86,38 +90,34 @@ def save_pdf(plot, path, name):
         d = pdf.infodict()
         d['Title'] = 'Results'
         d['Author'] = u'Maria Luiza'
-        pdf.savefig(bbox_inches="tight", dpi = 100)
+        pdf.savefig(bbox_inches="tight", dpi=100)
         plot.close()
 
-def plot_histogram(dataset, noise, labels, values, tech):
-    output_path = os.path.dirname(__file__) + '/Data/'+dataset+'/'
-    indexes = np.arange(len(labels))
-    width   = 0.5
 
-    plot        = plt.scatter(values, values, c = values, cmap = 'Spectral')
-    plt.clf()
-    plt.colorbar(plot)
-    
-    _prop       = plt.bar(indexes, values, width)
-    plt.xticks(indexes)
+def gen_ensemble(X_train, y_train, gen_method, base, n_estimators):
+    # Base Classifier - Perceptron, Decision Tree, etc.
+    baseClassifier = base
+    # Calibrating Perceptrons to estimate probabilities
+    base_clf = CalibratedClassifierCV(baseClassifier)
+    # Generation technique used to create the pool
+    pool_clf = gen_method(base_clf, n_estimators=n_estimators)
+    # Train the classifiers in the pool
+    pool_clf.fit(X_train, y_train)
 
-    def autolabel(rects):
-        """
-        Attach a text label above each bar displaying its height
-        """
-        for rect in rects:
-            height = rect.get_height()
-            plt.text(rect.get_x() + rect.get_width()/2., height,
-                    '%.2f' % height,
-                    ha ='center', va = 'bottom')
+    return pool_clf
 
-    autolabel(_prop)
-    
-    plt.title(dataset+"__"+tech+"__noise_"+str(noise)+"0%")
-    plt.xlabel("Labels")
-    plt.ylabel("Proportion %")
 
-    figure = plt.gcf() # get current figure
-    figure.set_size_inches(14, 8)
-    # plt.show()
-    save_pdf(plt, output_path, dataset+"__"+tech+"_noise_"+str(noise)+"0")
+def ds_ensemble(X_train, y_train, pool_clf, dyn_sel_method):
+    # Dynamic Selection method
+    ds_met = dyn_sel_method(pool_clf, selection_method='best')
+    # Train with DSel = Dtrain
+    ds_met.fit(X_train, y_train)
+
+    return ds_met
+
+
+def balance_dataset(X_train, y_train, balanc):
+    # Balance method techniques
+    res_dataset = balanc()
+
+    return res_dataset.fit_resample(X_train, y_train)

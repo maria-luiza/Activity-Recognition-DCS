@@ -213,16 +213,14 @@ def experiment(folds, iteration, activities_list, labels_dict, dyn_selector, noi
 if __name__ == '__main__':
     root = os.path.dirname(__file__)
 
-    # gen_methods = [AdaBoostClassifier, BaggingClassifier, SGH]
-    gen_methods = [SGH]
+    gen_methods = [AdaBoostClassifier, BaggingClassifier, SGH]
     ds_methods_dcs = [OLA, LCA, MCB, Rank, RandomForestClassifier]
     ds_methods_des = [KNORAU, KNORAE, KNOP, DESKNN, DESP, METADES]
 
     ds_methods = ds_methods_dcs #++ ds_methods_des
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
 
-    # datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
-    datasets = ['Kyoto2008']
+    datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
 
     for iteration, dataset in enumerate(datasets):
         for ds_method in ds_methods:

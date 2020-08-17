@@ -50,16 +50,11 @@ params = [[70, 80, 80, 80, 50, 90], [60, 60, 30, 40, 60, 50], [
     90, 80, 80, 90, 80, 90], [50, 60, 20, 20, 20, 60], [100, 80, 90, 90, 90, 80]]
 
 
-def process(args):
+def process_generation(args):
     X_train = args['X_train']
     y_train = args['y_train']
-    X_test = args['X_test']
-    y_test = args['y_test']
-    fold_name = args['fold_name']
-    method = args['ds_method']
     gen_method = args['gen_method']
     imb_method = args['imb_method']
-    params_rf = args['params']
 
     if imb_method:
         # In cases where the imbalanced learning techniques have been used
@@ -68,7 +63,32 @@ def process(args):
     # Generation method
     base = Perceptron(max_iter=1, n_jobs=-1)
     n_estimators = 100
-    pool_clf = gen_ensemble(X_train, y_train, gen_method, base, n_estimators)
+
+    return gen_ensemble(X_train, y_train, gen_method, base, n_estimators)
+
+
+def process_metrics(y_test, predictions):
+    # Metrics
+    mfm = multi_label_Fmeasure(y_test, predictions)
+    gmean = geometric_mean(y_test, predictions, "multiclass")
+    acc_by_class = accuracy_by_class(y_test, predictions)
+    acc = accuracy(y_test, predictions)
+    prec = precision(y_test, predictions, "macro")
+    rec = recall(y_test, predictions, "macro")
+    fmeasure = fmeasure_score(y_test, predictions, "macro")
+
+    return [mfm, gmean, acc, prec, rec, fmeasure, acc_by_class]
+
+
+def process_selection(args):
+    X_train = args['X_train']
+    y_train = args['y_train']
+    X_test = args['X_test']
+    y_test = args['y_test']
+    pool_clf = args['pool_clf']
+    fold_name = args['fold_name']
+    method = args['ds_method']
+    params_rf = args['params']
 
     # Evaluation considering Random Forest
     if method == RandomForestClassifier:
@@ -86,30 +106,14 @@ def process(args):
         else:
             predictions = ensemble.predict(X_test)
 
-    # Metrics
-    mfm = multi_label_Fmeasure(y_test, predictions)
-    gmean = geometric_mean(y_test, predictions, "multiclass")
     conf_matrix = confusion_matrix_score(y_test, predictions)
-    acc_by_class = accuracy_by_class(y_test, predictions)
-    acc = accuracy(y_test, predictions)
-    prec = precision(y_test, predictions, "macro")
-    rec = recall(y_test, predictions, "macro")
-    fmeasure = fmeasure_score(y_test, predictions, "macro")
-
-    metrics = [mfm, gmean, acc, prec, rec, fmeasure, acc_by_class]
+    metrics = process_metrics(y_test, predictions)
 
     return [fold_name, conf_matrix, metrics, predictions]
 
 
-def experiment(folds, iteration, activities_list, labels_dict, dyn_selector, noise, gen_method, dataset, imb_method):
-    pool = Pool(5)
-    jobs = []
-    # Y_Test = []
-
-    # Name
-    gen_method_name = str(gen_method).split('.')[-1].split('\'')[0]
-    dyn_method_name = str(dyn_selector).split('.')[-1].split('\'')[0]
-    imb_method_name = str(imb_method).split('.')[-1].split('\'')[0]
+def experiment_parameters(folds, noise, labels_dict):
+    args_list = []
 
     for f, fold in enumerate(folds):
         args = {'X_train': np.array(fold.xTrain)}
@@ -123,57 +127,49 @@ def experiment(folds, iteration, activities_list, labels_dict, dyn_selector, noi
         # Brew requires numeric class labels
         y_test = np.array(fold.yTest)
         args['y_test'] = np.array([labels_dict.get(x) for x in y_test])
-        # Y_Test.append(args['y_test'])
+        args_list.append(args)
 
-        args['fold_name'] = 'Fold_' + str(f + 1)
-        args['noise'] = noise
-        args['ds_method'] = dyn_selector
-        args['gen_method'] = gen_method
-        args['imb_method'] = imb_method
-        args['params'] = params[iteration][f]
-        jobs.append(args)
+    return args_list
 
-    results = list(map(process, jobs)) # Metrics
+
+def experiment_generation(parameters, gen_method, imb_method):
+    generation = []
+
+    for param in parameters:
+        param['gen_method'] = gen_method
+        param['imb_method'] = imb_method
+        generation.append(param)
+
+    return list(map(process_generation, generation))
+
+
+def experiment_selection(parameters, pool_gen, iteration, activities_list, dyn_selector, noise):
+    pool = Pool(5)
+    jobs = []
+
+    for f, (param, pool_clf) in enumerate(zip(parameters, pool_gen)):
+        param['pool_clf'] = pool_clf
+        param['fold_name'] = 'Fold_' + str(f + 1)
+        param['noise'] = noise
+        param['ds_method'] = dyn_selector
+        param['params'] = params[iteration][f]
+        jobs.append(param)
+
+    results = list(map(process_selection, jobs))
+
+    pool.close()
+
+    return results
+
+
+def save_metrics(dataset, results, activities_list, labels_dict, gen_method, dyn_selector, imb_method):
+    gen_method_name = str(gen_method).split('.')[-1].split('\'')[0]
+    dyn_method_name = str(dyn_selector).split('.')[-1].split('\'')[0]
+    imb_method_name = str(imb_method).split('.')[-1].split('\'')[0]
 
     folds_name = [result.pop(0) for result in results]
     # Get predictions
     predictions = np.concatenate([result.pop(-1) for result in results], axis=0)
-
-    # if dyn_selector != RandomForestClassifier:
-    #     # Competence level for each activity measured for each classifier
-    #     competences = [result.pop(-1) for result in results]
-
-    #     # Due to the different amount of classifiers for fold
-    #     dfs = []
-    #     for comp in competences:
-    #         df = pd.DataFrame(comp, columns=["B"+str(i)
-    #                                          for i in range(len(comp[0]))])
-    #         dfs.append(df)
-
-    #     # Concat competence folds
-    #     comp_df = pd.concat(dfs, axis=0)
-    #     comp_df.replace(np.NaN, 0, inplace=True)
-
-    # Get all roc indexes
-    # neighbors = np.concatenate([result.pop(-1) for result in results], axis=0)
-
-    #     # Columns for neighbors
-    #     cols = ["K"+str(i) for i in range(1, 8)]
-    #     neighbors_df = pd.DataFrame(neighbors, columns=cols)
-
-    #     # Get all Targets
-    #     Y_Test = np.concatenate(Y_Test, axis=0)
-
-    #     # Concat neighbors and competences dataframes
-    #     final_df = neighbors_df.merge(
-    #         comp_df, left_index=True, right_index=True, how='inner')
-    #     # Adding Predictions and Target
-    #     final_df["Predictions"] = predictions
-    #     final_df["Target"] = Y_Test
-    #     save_results_df(final_df, dataset + "/Competence", str(imb_method).split('.')[-1].split('\'')[0], str(gen_method).split(
-    #         '.')[-1].split('\'')[0], noise, dataset + "_" + str(dyn_selector).split('.')[-1].split('\'')[0] + "_Competence")
-
-    # else:
     confusion_mx = [result.pop(0) for result in results]
 
     # Due to the different amount of classifiers for fold
@@ -201,8 +197,6 @@ def experiment(folds, iteration, activities_list, labels_dict, dyn_selector, noi
         noise_level=str(noise)
     )
 
-    pool.close()
-
     metrics = ['MultiLabel-Fmeasure', 'Gmean', 'Accuracy', 'Precision', 'Recall', 'F1']
 
     accuracy_class_df, results_df = build_results_df(metrics, folds_name, results, activities_list)
@@ -213,37 +207,33 @@ def experiment(folds, iteration, activities_list, labels_dict, dyn_selector, noi
 if __name__ == '__main__':
     root = os.path.dirname(__file__)
 
-    gen_methods = [AdaBoostClassifier, BaggingClassifier, SGH]
+    # gen_methods = [BaggingClassifier, AdaBoostClassifier, SGH]
+    gen_methods = [SGH]
     baseline = [RandomForestClassifier]
     ds_methods_dcs = [OLA, LCA, MCB, Rank]
     ds_methods_des = [KNORAU, KNORAE, DESKNN, DESP, DESMI, DESClustering]
 
-    ds_methods = baseline + ds_methods_dcs + ds_methods_des
+    # ds_methods = baseline + ds_methods_dcs + ds_methods_des
+    ds_methods = ds_methods_dcs
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
 
     # datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
     datasets = ['Kyoto2008']
 
     for iteration, dataset in enumerate(datasets):
-        for ds_method in ds_methods:
-            for gen_method in gen_methods:
-                # for imb_methd in imb_methods:
-                if dataset != '.DS_Store':
-                    print('\n\n~~ Database : ' + dataset + ' ~~')
-                    print('** Gen Method: %s' % (str(gen_method).split('.')[-1].split('\'')[0]))
-                    print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))
+        print('\n\n~~ Database : ' + dataset + ' ~~')
+        folds_list, activities, examples_by_class = load_dataset(dataset)
 
-                    folds_list, activities, examples_by_class = load_dataset(dataset)
-                    for noise_level in range(0, 6):
-                        print('== Noise Parameter --> ' + str(noise_level) + '0% ==\n')
-                        experiment(
-                            folds_list,
-                            iteration,
-                            activities,
-                            examples_by_class,
-                            ds_method,
-                            noise_level,
-                            gen_method,
-                            dataset,
-                            None
-                        )
+        for noise in range(0, 6):
+            print('== Noise Parameter --> ' + str(noise) + '0% ==\n')
+
+            parameters = experiment_parameters(folds_list, noise, examples_by_class)
+            for gen_method in gen_methods:
+                print('** Gen Method: %s' % (str(gen_method).split('.')[-1].split('\'')[0]))
+                # pool of classifiers
+                pool_clf = experiment_generation(parameters, gen_method, None)
+
+                for ds_method in ds_methods:
+                    print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))
+                    results = experiment_selection(parameters, pool_clf, iteration, activities, ds_method, noise)
+                    save_metrics(dataset, results, activities, examples_by_class, gen_method, ds_method, None)

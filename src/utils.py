@@ -93,8 +93,18 @@ def save_pdf(plot, path, name):
 def gen_ensemble(X_train, y_train, gen_method, base, n_estimators, cv):
     # Base Classifier - Perceptron, Decision Tree, etc.
     baseClassifier = base
-    # Calibrating Perceptrons to estimate probabilities
-    base_clf = CalibratedClassifierCV(baseClassifier, cv=cv)
+
+    if cv == "prefit":
+        # Calibrating Perceptrons to estimate probabilities
+        # In case where the algorithms estimate probabilites by itself,
+        # the perceptron should be previously trained
+        baseClassifier = baseClassifier.fit(X_train, y_train)
+        base_clf = CalibratedClassifierCV(baseClassifier, cv=cv)
+        base_clf = base_clf.fit(X_train, y_train)
+
+    else:
+        base_clf = CalibratedClassifierCV(baseClassifier)
+
     # Generation technique used to create the pool
     pool_clf = gen_method(base_clf, n_estimators=n_estimators)
     # Train the classifiers in the pool

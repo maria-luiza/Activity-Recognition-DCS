@@ -2,19 +2,15 @@ import os
 import pandas as pd
 import itertools
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 
 from Orange.evaluation import compute_CD, graph_ranks
 
 from matplotlib.font_manager import FontProperties
-from matplotlib.backends.backend_pdf import PdfPages
 
-from datetime import datetime
 from utils import save_pdf
 
 from read_results import read_mean_results, read_accuracies
 from nonparametric_tests import friedman_test
-from scipy.stats import wilcoxon
 
 import numpy as np
 
@@ -70,9 +66,7 @@ def plot_confusion_matrix(cm, classes,
     Normalization can be applied by setting `normalize=True`.
     """
 
-    date_time = datetime.today().strftime('%Y-%m-%d')
-
-    output_path = root + '/Graphs/' + date_time + "/confusion_matrix/" + dataset + "/" + gen_method + "/"
+    output_path = root + '/Graphs/' + "/confusion_matrix/" + dataset + "/" + gen_method + "/"
 
     if not title:
         if normalize:
@@ -201,13 +195,13 @@ def plot_results(gen, dataset, imb_method, metric, techniques):
     save_pdf(plt, output_path, imb_method + "_" + dataset + "_" + metric)
 
 
-def plot_free_noise(date_exp, gen, imb_method, datasets, metric, techniques):
+def plot_free_noise(gen, imb_method, datasets, metric, techniques):
     free_noise = ['00']
     means = []
-    output_path = root + '/Graphs/' + date_exp + '/Free_noise/'
+    output_path = root + '/Graphs/' + '/Free_noise/'
 
     for dataset in datasets:
-        mean_accuracies, _ = read_mean_results(date_exp, gen, dataset, imb_method, free_noise, metric, techniques)
+        mean_accuracies, _ = read_mean_results(gen, dataset, imb_method, free_noise, metric, techniques)
         mean_accuracies.index = [dataset]
         means.append(mean_accuracies)
 
@@ -223,14 +217,14 @@ def plot_free_noise(date_exp, gen, imb_method, datasets, metric, techniques):
     save_pdf(plt, output_path, "Free_noise_" + metric)
 
 
-def plot_nemenyi(date_exp, gen, ranks, techniques, noise):
+def plot_nemenyi(gen, ranks, techniques, noise):
     cd = compute_CD(ranks, 30, alpha="0.05")
     graph_ranks(ranks, techniques, cd=cd, width=len(techniques), textspace=1.5)
-    save_pdf(plt, root + '/Graphs/' + date_exp + '/Nemenyi/' + gen + '/', 'Nemenyi_' + noise)
+    save_pdf(plt, root + '/Graphs/' + '/Nemenyi/' + gen + '/', 'Nemenyi_' + noise)
 
 
 if __name__ == '__main__':
-    datasets = ['HH103']
+    datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
     gen_methods = ["BaggingClassifier", "AdaBoostClassifier", "SGH"]
     metrics = ['MultiLabel-Fmeasure', 'Gmean', 'Accuracy', 'Precision', 'Recall', 'F1']
 
@@ -255,30 +249,27 @@ if __name__ == '__main__':
         for metric in metrics:
             for dataset in datasets:
                 plot_results(gen, dataset, data_type, metric, techniques)
-                # mean_accuracies, std_accuracies = read_mean_results(
-                #     date_experiment,
-                #     gen,
-                #     dataset, data_type,
-                #     noise_params,
-                #     metric,
-                #     techniques
-                # )
+                mean_accuracies, std_accuracies = read_mean_results(
+                    gen,
+                    dataset, data_type,
+                    noise_params,
+                    metric,
+                    techniques
+                )
 
-            #     if metric == "Accuracy":
-            #         dictionary = mean_accuracies.to_dict(orient='index')
-            #         dataset_folds = {}
-            #         for k in dictionary:
-            #             dataset_folds[k] = [dictionary[k][column_name] for column_name in mean_accuracies.columns]
-            #
-            #         # Friedman Tests
-            #         for key in friedmanT:
-            #             friedmanT[key].append(dataset_folds[key])
-            #
-            #         for key, value in friedmanT.items():
-            #             value = list(zip(*value))
-            #             # OLA, LCA, RANK, MCB, Random Forest
-            #             Fvalue, pvalue, ranks, pivots = friedman_test(value[0], value[1], value[2], value[3], value[4])
-            #
-            #             plot_nemenyi(date_experiment, gen, ranks, techniques, key)
-            #
-            # plot_free_noise(date_experiment, gen, data_type, datasets, metric, techniques)
+                if metric == "Accuracy":
+                    dictionary = mean_accuracies.to_dict(orient='index')
+                    dataset_folds = {}
+                    for k in dictionary:
+                        dataset_folds[k] = [dictionary[k][column_name] for column_name in mean_accuracies.columns]
+
+                    # Friedman Tests
+                    for key in friedmanT:
+                        friedmanT[key].append(dataset_folds[key])
+
+                    for key, value in friedmanT.items():
+                        value = list(zip(*value))
+                        Fvalue, pvalue, ranks, pivots = friedman_test(*value)
+                        plot_nemenyi(gen, ranks, techniques, key)
+
+            plot_free_noise(gen, data_type, datasets, metric, techniques)

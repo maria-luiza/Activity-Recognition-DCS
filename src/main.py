@@ -214,7 +214,8 @@ if __name__ == '__main__':
     # Prototype Selection Methods
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
     # Generation Methods
-    gen_methods = [BaggingClassifier, AdaBoostClassifier, SGH]
+    # gen_methods = [BaggingClassifier, AdaBoostClassifier, SGH]
+    gen_methods = [SGH]
     # Dynamic Selection Techniques
     baseline = [RandomForestClassifier]
     ds_methods_dcs = [OLA, LCA, MCB, Rank]

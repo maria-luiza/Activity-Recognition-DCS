@@ -1,4 +1,4 @@
-## Multiple Classifier Systems:
+## Multiple Classifier Systems
 ### An approach to Activity Recognition
 
 This project is an investigation proposed by Maria L. N. Rodrigues, UFPE, to obtain a Master Degree in Computer Science.
@@ -9,4 +9,4 @@ Smart homes can be defined as environments monitored by sensors that capture inf
 
 ##### Methodology Proposed
 
-![processOverview](https://user-images.githubusercontent.com/22620643/92197832-3bb59280-ee49-11ea-83cc-e78019b7219f.png){:height="50%" width="50%"}
+![processOverview](https://user-images.githubusercontent.com/22620643/92197832-3bb59280-ee49-11ea-83cc-e78019b7219f.png | width=100)

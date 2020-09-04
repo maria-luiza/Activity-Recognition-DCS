@@ -25,6 +25,8 @@ from deslib.des.des_mi import DESMI
 from deslib.des.des_knn import DESKNN
 from deslib.des.des_clustering import DESClustering
 from deslib.des.des_p import DESP
+from deslib.des.meta_des import METADES
+from deslib.des.knop import KNOP
 
 # Imbalancing Learning
 from imblearn.over_sampling import SMOTE
@@ -55,6 +57,7 @@ def process_generation(args):
     y_train = args['y_train']
     gen_method = args['gen_method']
     imb_method = args['imb_method']
+    cv_method = args['cross_validation']
 
     if imb_method:
         # In cases where the imbalanced learning techniques have been used
@@ -64,7 +67,7 @@ def process_generation(args):
     base = Perceptron(max_iter=1, n_jobs=-1)
     n_estimators = 100
 
-    return gen_ensemble(X_train, y_train, gen_method, base, n_estimators)
+    return gen_ensemble(X_train, y_train, gen_method, base, n_estimators, cv_method)
 
 
 def process_metrics(y_test, predictions):
@@ -132,12 +135,13 @@ def experiment_parameters(folds, noise, labels_dict):
     return args_list
 
 
-def experiment_generation(parameters, gen_method, imb_method):
+def experiment_generation(parameters, gen_method, imb_method, cv_method):
     generation = []
 
     for param in parameters:
         param['gen_method'] = gen_method
         param['imb_method'] = imb_method
+        param['cross_validation'] = cv_method
         generation.append(param)
 
     return list(map(process_generation, generation))
@@ -207,15 +211,17 @@ def save_metrics(dataset, results, activities_list, labels_dict, gen_method, dyn
 if __name__ == '__main__':
     root = os.path.dirname(__file__)
 
-    # gen_methods = [BaggingClassifier, AdaBoostClassifier, SGH]
-    gen_methods = [SGH]
+    # Prototype Selection Methods
+    imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
+    # Generation Methods
+    gen_methods = [BaggingClassifier, AdaBoostClassifier, SGH]
+    # Dynamic Selection Techniques
     baseline = [RandomForestClassifier]
     ds_methods_dcs = [OLA, LCA, MCB, Rank]
     ds_methods_des = [KNORAU, KNORAE, DESKNN, DESP, DESMI, DESClustering]
 
     # ds_methods = baseline + ds_methods_dcs + ds_methods_des
-    ds_methods = ds_methods_dcs
-    imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
+    ds_methods = [METADES, KNOP]
 
     # datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
     datasets = ['Kyoto2008']
@@ -231,7 +237,7 @@ if __name__ == '__main__':
             for gen_method in gen_methods:
                 print('** Gen Method: %s' % (str(gen_method).split('.')[-1].split('\'')[0]))
                 # pool of classifiers
-                pool_clf = experiment_generation(parameters, gen_method, None)
+                pool_clf = experiment_generation(parameters, gen_method, None, "prefit")
 
                 for ds_method in ds_methods:
                     print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))

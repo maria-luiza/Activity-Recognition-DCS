@@ -172,15 +172,16 @@ def plot_technique(gen_methods, dataset, imb_method, metric, techniques):
              '_'.join(techniques) + "_" + metric)
 
 
-def plot_results(date_exp, gen, dataset, imb_method, metric, techniques):
-    output_path = root + '/Graphs/' + date_exp + '/' + metric + '/' + gen + '/'
+def plot_results(gen, dataset, imb_method, metric, techniques):
+    output_path = root + '/Graphs/' + metric + '/' + gen + '/'
 
     # Plot configuration
     markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8', 'v', '.']
-    colors = ['0.4', '0.6', 'lightcoral', 'red', 'crimson', 'maroon', 'orangered', 'tomato', 'sienna', 'salmon', 'coral']
+    colors = ['0.4', '0.6', 'lightcoral', 'red', 'crimson', 'maroon', 'orangered', 'tomato', 'sienna', 'salmon',
+              'coral']
 
     mean_accuracies, std_acc = read_mean_results(
-        date_exp, gen, dataset, imb_method, noise_params, metric, techniques)
+        gen, dataset, imb_method, noise_params, metric, techniques)
 
     for i, column in enumerate(mean_accuracies):
         if i < 4:
@@ -229,8 +230,8 @@ def plot_nemenyi(date_exp, gen, ranks, techniques, noise):
 
 
 if __name__ == '__main__':
-    datasets = ['Kyoto2008']
-    gen_methods = ['SGH']
+    datasets = ['HH103']
+    gen_methods = ["BaggingClassifier", "AdaBoostClassifier", "SGH"]
     metrics = ['MultiLabel-Fmeasure', 'Gmean', 'Accuracy', 'Precision', 'Recall', 'F1']
 
     baseline = ['RandomForestClassifier']
@@ -240,7 +241,6 @@ if __name__ == '__main__':
     techniques = baseline + techniques_dcs + techniques_des
 
     data_type = "imbalanced"
-    date_experiment = "2020-08-16"
 
     friedmanT = {'00': [],
                  '10': [],
@@ -254,7 +254,7 @@ if __name__ == '__main__':
         print("Generation >>>> {} <<<<".format(gen))
         for metric in metrics:
             for dataset in datasets:
-                plot_results(date_experiment, gen, dataset, data_type, metric, techniques)
+                plot_results(gen, dataset, data_type, metric, techniques)
                 # mean_accuracies, std_accuracies = read_mean_results(
                 #     date_experiment,
                 #     gen,

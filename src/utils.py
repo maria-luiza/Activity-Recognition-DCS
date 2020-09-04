@@ -4,14 +4,12 @@ import shlex
 import pandas as pd
 import numpy as np
 import pickle
-from datetime import datetime
 from matplotlib.backends.backend_pdf import PdfPages
 
 # Metrics for evaluation
 from sklearn.calibration import CalibratedClassifierCV
 
 root = "../"
-
 
 def load_folds(file_name):
     file_path = root + '/folds/' + file_name
@@ -69,12 +67,10 @@ def build_results_df(metrics, folds, results, labels):
 
 
 def save_results_df(accuracy_df, dataset, imb_method, gen_method, noise, technique):
-    date_time = datetime.today().strftime('%Y-%m-%d')
-
     if imb_method == "None":
         imb_method = "imbalanced"
 
-    file_path = root + '/Results/' + date_time + '/' + imb_method + '/' + gen_method + '/' + dataset + '/'
+    file_path = root + '/Results/' + '/' + imb_method + '/' + gen_method + '/' + dataset + '/'
     if not os.path.exists(file_path):
         os.makedirs(file_path)
 
@@ -94,11 +90,11 @@ def save_pdf(plot, path, name):
         plot.close()
 
 
-def gen_ensemble(X_train, y_train, gen_method, base, n_estimators):
+def gen_ensemble(X_train, y_train, gen_method, base, n_estimators, cv):
     # Base Classifier - Perceptron, Decision Tree, etc.
     baseClassifier = base
     # Calibrating Perceptrons to estimate probabilities
-    base_clf = CalibratedClassifierCV(baseClassifier)
+    base_clf = CalibratedClassifierCV(baseClassifier, cv=cv)
     # Generation technique used to create the pool
     pool_clf = gen_method(base_clf, n_estimators=n_estimators)
     # Train the classifiers in the pool

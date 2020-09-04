@@ -7,13 +7,13 @@ noise_params = ['00', '10', '20', '30', '40', '50']
 input_path = root + '/Results/'
 
 
-def read_mean_results(date_exp, gen, dataset, imb_method, noise_params, metric, techniques):
+def read_mean_results(gen, dataset, imb_method, noise_params, metric, techniques):
     mean_accuracies = pd.DataFrame(0, columns=techniques, index=noise_params)
     std_dev_accuracies = pd.DataFrame(0, columns=techniques, index=noise_params)
 
     for noise in noise_params:
         for technic in techniques:
-            acc = read_accuracies(date_exp, gen, dataset, imb_method, technic, noise)
+            acc = read_accuracies(gen, dataset, imb_method, technic, noise)
 
             if technic == "Random Forest" and metric != "Accuracy":
                 mean_accuracies.loc[noise, technic] = round(acc.loc['Mean', metric + " Micro"] * 100, 2)
@@ -27,9 +27,8 @@ def read_mean_results(date_exp, gen, dataset, imb_method, noise_params, metric, 
     return mean_accuracies, std_dev_accuracies
 
 
-def read_accuracies(date_exp, gen, dataset, imb_method, technic, noise):
+def read_accuracies(gen, dataset, imb_method, technic, noise):
     return pd.read_csv(input_path +
-                       date_exp + '/' +
                        imb_method + '/' +
                        gen + '/' +
                        dataset + '/' +

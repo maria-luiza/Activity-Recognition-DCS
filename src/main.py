@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 from multiprocessing import Pool
 
+from sklearn.calibration import CalibratedClassifierCV
+
 # Classifier for comparison
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import Perceptron
@@ -57,7 +59,6 @@ def process_generation(args):
     y_train = args['y_train']
     gen_method = args['gen_method']
     imb_method = args['imb_method']
-    cv_method = args['cross_validation']
 
     if imb_method:
         # In cases where the imbalanced learning techniques have been used
@@ -67,11 +68,10 @@ def process_generation(args):
     base = Perceptron(max_iter=1, n_jobs=-1)
     n_estimators = 100
 
-    return gen_ensemble(X_train, y_train, gen_method, base, n_estimators, cv_method)
+    return gen_ensemble(X_train, y_train, gen_method, base, n_estimators)
 
 
 def process_metrics(y_test, predictions):
-    # Metrics
     mfm = multi_label_Fmeasure(y_test, predictions)
     gmean = geometric_mean(y_test, predictions, "multiclass")
     acc_by_class = accuracy_by_class(y_test, predictions)
@@ -90,6 +90,7 @@ def process_selection(args):
     y_test = args['y_test']
     pool_clf = args['pool_clf']
     fold_name = args['fold_name']
+    gen_method = args['gen_method']
     method = args['ds_method']
     params_rf = args['params']
 
@@ -99,15 +100,26 @@ def process_selection(args):
         ensemble.fit(X_train, y_train)
         predictions = ensemble.predict(X_test)
 
-    # Dynamic Selection techniques
     else:
+        # Since the SGH was not built to predict probabilities,
+        # the perceptrons should be previously trained
+        if gen_method == SGH and (method == METADES or method == KNOP):
+            calibrated_pool = []
+            for clf in pool_clf:
+                calibrated = CalibratedClassifierCV(base_estimator=clf, cv='prefit')
+                calibrated.fit(X_train, y_train)
+                calibrated_pool.append(calibrated)
+
+            pool_clf = calibrated_pool
+
+        # Dynamic Selection techniques
         ensemble = ds_ensemble(X_train, y_train, pool_clf, method)
 
-        # In prediction phase, two options: Oracle and DS techniques
-        if method == Oracle:
-            predictions = ensemble.predict(X_test, y_test)
-        else:
-            predictions = ensemble.predict(X_test)
+    # In prediction phase, two options: Oracle and DS techniques
+    if method == Oracle:
+        predictions = ensemble.predict(X_test, y_test)
+    else:
+        predictions = ensemble.predict(X_test)
 
     conf_matrix = confusion_matrix_score(y_test, predictions)
     metrics = process_metrics(y_test, predictions)
@@ -135,19 +147,18 @@ def experiment_parameters(folds, noise, labels_dict):
     return args_list
 
 
-def experiment_generation(parameters, gen_method, imb_method, cv_method):
+def experiment_generation(parameters, gen_method, imb_method):
     generation = []
 
     for param in parameters:
         param['gen_method'] = gen_method
         param['imb_method'] = imb_method
-        param['cross_validation'] = cv_method
         generation.append(param)
 
     return list(map(process_generation, generation))
 
 
-def experiment_selection(parameters, pool_gen, iteration, activities_list, dyn_selector, noise):
+def experiment_selection(parameters, pool_gen, iteration, gen_method, dyn_selector, noise):
     pool = Pool(5)
     jobs = []
 
@@ -156,6 +167,7 @@ def experiment_selection(parameters, pool_gen, iteration, activities_list, dyn_s
         param['fold_name'] = 'Fold_' + str(f + 1)
         param['noise'] = noise
         param['ds_method'] = dyn_selector
+        param['gen_method'] = gen_method
         param['params'] = params[iteration][f]
         jobs.append(param)
 
@@ -214,8 +226,7 @@ if __name__ == '__main__':
     # Prototype Selection Methods
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
     # Generation Methods
-    # gen_methods = [BaggingClassifier, AdaBoostClassifier, SGH]
-    gen_methods = [SGH]
+    gen_methods = [BaggingClassifier, AdaBoostClassifier, SGH]
     # Dynamic Selection Techniques
     baseline = [RandomForestClassifier]
     ds_methods_dcs = [OLA, LCA, MCB, Rank]
@@ -225,7 +236,7 @@ if __name__ == '__main__':
     ds_methods = [METADES, KNOP]
 
     # datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
-    datasets = ['Kyoto2008']
+    datasets = ['HH129']
 
     for iteration, dataset in enumerate(datasets):
         print('\n\n~~ Database : ' + dataset + ' ~~')
@@ -238,9 +249,9 @@ if __name__ == '__main__':
             for gen_method in gen_methods:
                 print('** Gen Method: %s' % (str(gen_method).split('.')[-1].split('\'')[0]))
                 # pool of classifiers
-                pool_clf = experiment_generation(parameters, gen_method, None, "prefit")
+                pool_clf = experiment_generation(parameters, gen_method, None)
 
                 for ds_method in ds_methods:
                     print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))
-                    results = experiment_selection(parameters, pool_clf, iteration, activities, ds_method, noise)
+                    results = experiment_selection(parameters, pool_clf, iteration, gen_method, ds_method, noise)
                     save_metrics(dataset, results, activities, examples_by_class, gen_method, ds_method, None)

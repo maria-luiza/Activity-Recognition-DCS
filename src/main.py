@@ -223,26 +223,25 @@ def save_metrics(dataset, results, activities_list, labels_dict, gen_method, dyn
 if __name__ == '__main__':
     root = os.path.dirname(__file__)
 
+    baseline = [RandomForestClassifier]
+
     # Prototype Selection Methods
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
     # Generation Methods
     gen_methods = [BaggingClassifier, AdaBoostClassifier, SGH]
     # Dynamic Selection Techniques
-    baseline = [RandomForestClassifier]
+
     ds_methods_dcs = [OLA, LCA, MCB, Rank]
-    ds_methods_des = [KNORAU, KNORAE, DESKNN, DESP, DESMI, DESClustering]
+    ds_methods_des = [KNORAU, KNORAE, DESKNN, DESP, DESMI, DESClustering, METADES, KNOP]
+    ds_methods = baseline + ds_methods_dcs + ds_methods_des
 
-    # ds_methods = baseline + ds_methods_dcs + ds_methods_des
-    ds_methods = [METADES, KNOP]
-
-    # datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
-    datasets = ['HH129']
+    datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
 
     for iteration, dataset in enumerate(datasets):
         print('\n\n~~ Database : ' + dataset + ' ~~')
         folds_list, activities, examples_by_class = load_dataset(dataset)
 
-        for noise in range(5, 6):
+        for noise in range(0, 6):
             print('== Noise Parameter --> ' + str(noise) + '0% ==\n')
 
             parameters = experiment_parameters(folds_list, noise, examples_by_class)

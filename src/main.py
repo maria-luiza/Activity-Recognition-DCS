@@ -242,7 +242,7 @@ if __name__ == '__main__':
         print('\n\n~~ Database : ' + dataset + ' ~~')
         folds_list, activities, examples_by_class = load_dataset(dataset)
 
-        for noise in range(0, 6):
+        for noise in range(5, 6):
             print('== Noise Parameter --> ' + str(noise) + '0% ==\n')
 
             parameters = experiment_parameters(folds_list, noise, examples_by_class)

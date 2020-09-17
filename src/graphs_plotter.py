@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import itertools
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 from Orange.evaluation import compute_CD, graph_ranks
 
@@ -170,19 +171,15 @@ def plot_results(gen, dataset, imb_method, metric, techniques):
     output_path = root + '/Graphs/' + metric + '/' + gen + '/'
 
     # Plot configuration
-    markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8', 'v', '.']
-    colors = ['0.4', '0.6', 'lightcoral', 'red', 'crimson', 'maroon', 'orangered', 'tomato', 'sienna', 'salmon',
-              'coral']
+    markers = ['o', 's', '^', 'd', '*', 'X', 'D', 'P', '8', 'v', '.', 'x', '+']
+    colors = ['rosybrown', 'indianred', 'firebrick', 'darkred', 'salmon', 'red',
+              'tomato', 'coral', 'orangered', 'sienna', 'chocolate', 'saddlebrown', 'sandybrown', 'peru']
 
     mean_accuracies, std_acc = read_mean_results(
         gen, dataset, imb_method, noise_params, metric, techniques)
 
     for i, column in enumerate(mean_accuracies):
-        if i < 4:
-            plt.plot(noise_params, mean_accuracies[column], colors[i], label=column, marker=markers[i],
-                     markersize=3, markerfacecolor=(1, 1, 1), dashes=[2, 5, 3, 5], linewidth=1)
-        else:
-            plt.plot(noise_params, mean_accuracies[column], colors[i], label=column, marker=markers[i - 4],
+        plt.plot(noise_params, mean_accuracies[column], colors[i], label=column, marker=markers[i],
                      markersize=3, linewidth=1)
     legend_font = FontProperties()
     legend_font.set_size(8)
@@ -230,7 +227,7 @@ if __name__ == '__main__':
 
     baseline = ['RandomForestClassifier']
     techniques_dcs = ['OLA', 'LCA', 'Rank', 'MCB']
-    techniques_des = ['KNORAU', 'KNORAE', 'DESKNN', 'DESP', 'DESMI', 'DESClustering']
+    techniques_des = ['KNORAU', 'KNORAE', 'DESKNN', 'DESP', 'DESMI', 'DESClustering', 'METADES', 'KNOP']
 
     techniques = baseline + techniques_dcs + techniques_des
 

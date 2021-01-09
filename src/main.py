@@ -12,7 +12,7 @@ from sklearn.linear_model import Perceptron
 # Generation Pool techniques
 from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import AdaBoostClassifier
-from deslib.util.sgh import SGH
+from sgh import SGH
 
 # Selection phase (DCS)
 from deslib.dcs.ola import OLA
@@ -65,7 +65,7 @@ def process_generation(args):
         X_train, y_train = balance_dataset(X_train, y_train, imb_method)
 
     # Generation method
-    base = Perceptron(max_iter=1, n_jobs=-1)
+    base = Perceptron(max_iter=1000, n_jobs=-1)
     n_estimators = 100
 
     return gen_ensemble(X_train, y_train, gen_method, base, n_estimators)
@@ -233,15 +233,15 @@ if __name__ == '__main__':
 
     ds_methods_dcs = [OLA, LCA, MCB, Rank]
     ds_methods_des = [KNORAU, KNORAE, DESKNN, DESP, DESMI, DESClustering, METADES, KNOP]
-    ds_methods = baseline + ds_methods_dcs + ds_methods_des
+    ds_methods = baseline + ds_methods_dcs + ds_methods_des + [Oracle]
 
     datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
-
+    
     for iteration, dataset in enumerate(datasets):
         print('\n\n~~ Database : ' + dataset + ' ~~')
         folds_list, activities, examples_by_class = load_dataset(dataset)
 
-        for noise in range(0, 6):
+        for noise in range(5, 6):
             print('== Noise Parameter --> ' + str(noise) + '0% ==\n')
 
             parameters = experiment_parameters(folds_list, noise, examples_by_class)

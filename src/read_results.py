@@ -37,6 +37,15 @@ def read_accuracies(gen, dataset, imb_method, technic, noise):
                        noise + '.csv',
                        index_col=0, header=0)
 
+def read_mean_accuracies_and_standard(datasets, gen_methods, techniques, metrics, imb_method, noise_params):
+    # General measurements
+    for gen in gen_methods:
+        for metric in metrics:
+            for dataset in datasets:
+                mean_accuracies, std_acc = read_mean_results(gen, dataset, imb_method, noise_params, metric, techniques)
+
+    return measurements, std_acc
+
 
 def read_mean_results_per_noise(datasets, gen_method, imb_method, noise, techniques):
     mean_accuracies = pd.DataFrame(index=techniques, columns=datasets)

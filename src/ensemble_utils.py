@@ -27,6 +27,13 @@ def load_dataset(dataset_name):
     return folds, activities_list, labels_dict
 
 
+def save_experiment(exp, tech, file, noise, data):
+    file_path = root + 'Results/' + exp + "_" + tech + "_noise_" + noise + "_" + file
+    with open(file_path, 'wb') as fp:
+        pickle.dump(data, fp)
+        fp.close()
+
+
 def get_text(filename):
     doc = docx.Document(filename)
     full_text = []

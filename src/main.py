@@ -41,7 +41,7 @@ from deslib.static.oracle import Oracle
 
 # Common functions
 from ensemble_utils import gen_ensemble, ds_ensemble, balance_dataset
-from ensemble_utils import load_dataset, build_results_df, save_results_df
+from ensemble_utils import load_dataset, build_results_df, save_results_df, save_experiment
 
 # Metrics
 from metrics import *
@@ -253,8 +253,13 @@ if __name__ == '__main__':
                         print('** Gen Method: %s' % (str(gen_method).split('.')[-1].split('\'')[0]))
                         # pool of classifiers
                         pool_clf = experiment_generation(parameters, gen_method, None)
+                        # Save pool
+                        gen_name = str(gen_method).split('.')[-1].split('\'')[0]
+                        save_experiment("generation", gen_name, dataset, str(noise), pool_clf)
 
                         for ds_method in ds_methods:
                             print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))
-                            results = experiment_selection(parameters, pool_clf, iteration, gen_method, ds_method, noise)
-                            save_metrics(dataset, results, activities, examples_by_class, gen_method, ds_method, None, noise)
+                            results = experiment_selection(parameters, pool_clf, iteration, gen_method, ds_method,
+                                                           noise)
+                            save_metrics(dataset, results, activities, examples_by_class, gen_method, ds_method, None,
+                                         noise)

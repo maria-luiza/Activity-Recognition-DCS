@@ -98,7 +98,6 @@ def process_selection(args):
     if method == RandomForestClassifier:
         ensemble = RandomForestClassifier(n_estimators=params_rf)
         ensemble.fit(X_train, y_train)
-        predictions = ensemble.predict(X_test)
 
     else:
         # Since the SGH was not built to predict probabilities,

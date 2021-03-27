@@ -1,7 +1,7 @@
-import os
 import numpy as np
 import pandas as pd
 from multiprocessing import Pool
+from folder_utils import *
 
 from sklearn.calibration import CalibratedClassifierCV
 
@@ -40,14 +40,14 @@ from imblearn.under_sampling import RandomUnderSampler
 from deslib.static.oracle import Oracle
 
 # Common functions
-from utils import gen_ensemble, ds_ensemble, balance_dataset
-from utils import load_dataset, build_results_df, save_results_df
+from ensemble_utils import gen_ensemble, ds_ensemble, balance_dataset
+from ensemble_utils import load_dataset, build_results_df, save_results_df
 
 # Metrics
 from metrics import *
 
 # Plot Confusion Matrix
-from graphs_plotter import plot_confusion_matrix
+from graphs_plotter import plot__confusion_matrix
 
 # Number of trees for each fold in ['HH103', 'HH124', 'HH129', 'Kyoto2008','Kyoto2009Spring']
 params = [[70, 80, 80, 80, 50, 90], [60, 60, 30, 40, 60, 50], [
@@ -178,7 +178,7 @@ def experiment_selection(parameters, pool_gen, iteration, gen_method, dyn_select
     return results
 
 
-def save_metrics(dataset, results, activities_list, labels_dict, gen_method, dyn_selector, imb_method):
+def save_metrics(dataset, results, activities_list, labels_dict, gen_method, dyn_selector, imb_method, noise):
     gen_method_name = str(gen_method).split('.')[-1].split('\'')[0]
     dyn_method_name = str(dyn_selector).split('.')[-1].split('\'')[0]
     imb_method_name = str(imb_method).split('.')[-1].split('\'')[0]
@@ -201,11 +201,9 @@ def save_metrics(dataset, results, activities_list, labels_dict, gen_method, dyn
     # Concat confusion matrix per folds
     comp_df = pd.concat(dfs, axis=0).groupby(level=0).sum()
     cm = comp_df.values
-
-    plot_confusion_matrix(
+    plot__confusion_matrix(
         cm=cm,
         classes=labels_dict,
-        normalize=True,
         title=dataset + ": " + dyn_method_name + " - " + str(noise) + "0%",
         dataset=dataset,
         gen_method=gen_method_name,
@@ -221,9 +219,11 @@ def save_metrics(dataset, results, activities_list, labels_dict, gen_method, dyn
 
 
 if __name__ == '__main__':
-    root = os.path.dirname(__file__)
+    ROOT_DIR = get_root_dirname()
 
     baseline = [RandomForestClassifier]
+
+    inputs = ["Dynamic", "Static"]
 
     # Prototype Selection Methods
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
@@ -235,22 +235,27 @@ if __name__ == '__main__':
     ds_methods_des = [KNORAU, KNORAE, DESKNN, DESP, DESMI, DESClustering, METADES, KNOP]
     ds_methods = baseline + ds_methods_dcs + ds_methods_des + [Oracle]
 
-    datasets = ['HH103', 'HH124', 'HH129', 'Kyoto2008', 'Kyoto2009Spring']
+    dir_name = os.path.dirname(join_paths(ROOT_DIR, "folds/"))
 
-    for iteration, dataset in enumerate(datasets):
-        print('\n\n~~ Database : ' + dataset + ' ~~')
-        folds_list, activities, examples_by_class = load_dataset(dataset)
+    for input in inputs:
+        path_datasets = os.path.dirname(join_paths(dir_name, input + "/"))
+        datasets = list_directory(path_datasets)
 
-        for noise in range(0, 6):
-            print('== Noise Parameter --> ' + str(noise) + '0% ==\n')
+        for iteration, dataset in enumerate(datasets):
+            if dataset not in [".DS_Store", "csv"]:
+                print('\n\n~~ Database : ' + dataset + ' ~~')
+                path = input + "/" + dataset
+                folds_list, activities, examples_by_class = load_dataset(path)
 
-            parameters = experiment_parameters(folds_list, noise, examples_by_class)
-            for gen_method in gen_methods:
-                print('** Gen Method: %s' % (str(gen_method).split('.')[-1].split('\'')[0]))
-                # pool of classifiers
-                pool_clf = experiment_generation(parameters, gen_method, None)
+                for noise in range(0, 6):
+                    print('== Noise Parameter --> ' + str(noise) + '0% ==\n')
+                    parameters = experiment_parameters(folds_list, noise, examples_by_class)
+                    for gen_method in gen_methods:
+                        print('** Gen Method: %s' % (str(gen_method).split('.')[-1].split('\'')[0]))
+                        # pool of classifiers
+                        pool_clf = experiment_generation(parameters, gen_method, None)
 
-                for ds_method in ds_methods:
-                    print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))
-                    results = experiment_selection(parameters, pool_clf, iteration, gen_method, ds_method, noise)
-                    save_metrics(dataset, results, activities, examples_by_class, gen_method, ds_method, None)
+                        for ds_method in ds_methods:
+                            print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))
+                            results = experiment_selection(parameters, pool_clf, iteration, gen_method, ds_method, noise)
+                            save_metrics(dataset, results, activities, examples_by_class, gen_method, ds_method, None, noise)

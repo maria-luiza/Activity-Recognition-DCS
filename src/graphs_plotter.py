@@ -8,7 +8,7 @@ from Orange.evaluation import compute_CD, graph_ranks
 
 from matplotlib.font_manager import FontProperties
 
-from utils import save_pdf
+from ensemble_utils import save_pdf
 
 from read_results import read_mean_results, read_accuracies
 from nonparametric_tests import friedman_test

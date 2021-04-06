@@ -5,6 +5,7 @@ from imblearn.metrics import geometric_mean_score
     Metrics used to measure the classification performed by the techniques.
 """
 
+
 def accuracy(y_test, y_pred):
     return accuracy_score(y_test, y_pred)
 

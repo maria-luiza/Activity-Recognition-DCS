@@ -34,6 +34,14 @@ def save_experiment(exp, tech, file, noise, data):
         fp.close()
 
 
+def load_experiment(exp, tech, file, noise):
+    file_path = root + 'Results/' + exp + "_" + tech + "_noise_" + noise + "_" + file
+    with open(file_path, 'rb') as fp:
+        output = pickle.load(fp)
+        fp.close()
+    return output
+
+
 def get_text(filename):
     doc = docx.Document(filename)
     full_text = []

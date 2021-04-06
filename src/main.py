@@ -41,17 +41,13 @@ from deslib.static.oracle import Oracle
 
 # Common functions
 from ensemble_utils import gen_ensemble, ds_ensemble, balance_dataset
-from ensemble_utils import load_dataset, build_results_df, save_results_df, save_experiment
+from ensemble_utils import load_dataset, build_results_df, save_results_df, save_experiment, load_experiment
 
 # Metrics
 from metrics import *
 
 # Plot Confusion Matrix
 from graphs_plotter import plot__confusion_matrix
-
-# Number of trees for each fold in ['HH103', 'HH124', 'HH129', 'Kyoto2008','Kyoto2009Spring']
-params = [[70, 80, 80, 80, 50, 90], [60, 60, 30, 40, 60, 50], [
-    90, 80, 80, 90, 80, 90], [50, 60, 20, 20, 20, 60], [100, 80, 90, 90, 90, 80]]
 
 
 def process_generation(args):
@@ -92,11 +88,10 @@ def process_selection(args):
     fold_name = args['fold_name']
     gen_method = args['gen_method']
     method = args['ds_method']
-    params_rf = args['params']
 
     # Evaluation considering Random Forest
     if method == RandomForestClassifier:
-        ensemble = RandomForestClassifier(n_estimators=params_rf)
+        ensemble = RandomForestClassifier(n_estimators=100)
         ensemble.fit(X_train, y_train)
 
     else:
@@ -157,7 +152,7 @@ def experiment_generation(parameters, gen_method, imb_method):
     return list(map(process_generation, generation))
 
 
-def experiment_selection(parameters, pool_gen, iteration, gen_method, dyn_selector, noise):
+def experiment_selection(parameters, pool_gen, gen_method, dyn_selector, noise):
     pool = Pool(5)
     jobs = []
 
@@ -167,7 +162,6 @@ def experiment_selection(parameters, pool_gen, iteration, gen_method, dyn_select
         param['noise'] = noise
         param['ds_method'] = dyn_selector
         param['gen_method'] = gen_method
-        param['params'] = params[iteration][f]
         jobs.append(param)
 
     results = list(map(process_selection, jobs))
@@ -178,9 +172,12 @@ def experiment_selection(parameters, pool_gen, iteration, gen_method, dyn_select
 
 
 def save_metrics(dataset, results, activities_list, labels_dict, gen_method, dyn_selector, imb_method, noise):
-    gen_method_name = str(gen_method).split('.')[-1].split('\'')[0]
-    dyn_method_name = str(dyn_selector).split('.')[-1].split('\'')[0]
-    imb_method_name = str(imb_method).split('.')[-1].split('\'')[0]
+    def extract_name(method):
+        return str(method).split('.')[-1].split('\'')[0]
+
+    gen_method_name = extract_name(gen_method)
+    dyn_method_name = extract_name(dyn_selector)
+    imb_method_name = extract_name(imb_method)
 
     folds_name = [result.pop(0) for result in results]
     # Get predictions
@@ -227,7 +224,7 @@ if __name__ == '__main__':
     # Prototype Selection Methods
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
     # Generation Methods
-    gen_methods = [BaggingClassifier, AdaBoostClassifier, SGH]
+    gen_methods = [SGH, BaggingClassifier, AdaBoostClassifier]
     # Dynamic Selection Techniques
 
     ds_methods_dcs = [OLA, LCA, MCB, Rank]
@@ -241,7 +238,7 @@ if __name__ == '__main__':
         datasets = list_directory(path_datasets)
 
         for iteration, dataset in enumerate(datasets):
-            if dataset not in [".DS_Store", "csv"]:
+            if not dataset.startswith('.'):
                 print('\n\n~~ Database : ' + dataset + ' ~~')
                 path = input + "/" + dataset
                 folds_list, activities, examples_by_class = load_dataset(path)
@@ -257,9 +254,10 @@ if __name__ == '__main__':
                         gen_name = str(gen_method).split('.')[-1].split('\'')[0]
                         save_experiment("generation", gen_name, dataset, str(noise), pool_clf)
 
+                        # pool_clf = load_experiment("generation", gen_name, dataset, str(noise))
+
                         for ds_method in ds_methods:
                             print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))
-                            results = experiment_selection(parameters, pool_clf, iteration, gen_method, ds_method,
-                                                           noise)
+                            results = experiment_selection(parameters, pool_clf, gen_method, ds_method, noise)
                             save_metrics(dataset, results, activities, examples_by_class, gen_method, ds_method, None,
                                          noise)

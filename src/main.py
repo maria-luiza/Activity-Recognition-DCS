@@ -8,6 +8,7 @@ from sklearn.calibration import CalibratedClassifierCV
 # Classifier for comparison
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import Perceptron
+from sklearn.tree import DecisionTreeClassifier
 
 # Generation Pool techniques
 from sklearn.ensemble import BaggingClassifier
@@ -61,10 +62,11 @@ def process_generation(args):
         X_train, y_train = balance_dataset(X_train, y_train, imb_method)
 
     # Generation method
-    base = Perceptron(max_iter=1000, n_jobs=-1)
+    baseP = Perceptron(max_iter=1000, n_jobs=-1)
+    baseD = DecisionTreeClassifier(class_weight="balanced")
     n_estimators = 100
 
-    return gen_ensemble(X_train, y_train, gen_method, base, n_estimators)
+    return gen_ensemble(X_train, y_train, gen_method, baseP, n_estimators)
 
 
 def process_metrics(y_test, predictions):
@@ -259,5 +261,6 @@ if __name__ == '__main__':
                         for ds_method in ds_methods:
                             print('** DS Method: %s' % (str(ds_method).split('.')[-1].split('\'')[0] + ' **\n'))
                             results = experiment_selection(parameters, pool_clf, gen_method, ds_method, noise)
-                            save_metrics(dataset, results, activities, examples_by_class, gen_method, ds_method, None,
+                            save_metrics(dataset, results, activities, examples_by_class, gen_method, ds_method,
+                                         None,
                                          noise)

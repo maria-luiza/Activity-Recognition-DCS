@@ -108,7 +108,7 @@ def plot__results(gen_methods, datasets, imb_method, metrics, techniques, data_t
     for gen in gen_methods:
         for metric in metrics:
             for dataset in datasets:
-                output_path = root + '/Graphs/' + data_type + '/' + metric + '/' + gen + '/'
+                output_path = root + '/Graphs/' + data_type + '/DecisionTree/' + metric + '/' + gen + '/'
 
                 mean_accuracies, std_acc = read_mean_accuracies_and_standard(dataset,
                                                                              gen,
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     inputs = ["Dynamic"]
 
     # Datasets
-    datasets = ["hh101", "hh102", "hh103", "hh104", "hh105", "hh106", "hh108", "hh109", "hh125"]
+    datasets = ["hh102", "hh104", "hh109", "hh125"]
 
     # Metrics
     metrics = ['MultiLabel-Fmeasure', 'Gmean', 'Accuracy', 'Precision', 'Recall', 'F1']
@@ -194,8 +194,9 @@ if __name__ == '__main__':
     techniques_des = ['KNORAU', 'KNORAE', 'DESKNN', 'DESP', 'DESMI', 'DESClustering', 'METADES', 'KNOP']
     techniques = baseline + techniques_dcs + techniques_des + oracle
 
-    imb_method = "imbalanced"
+    imb_methods = ["balanced"]
 
-    for input in inputs:
-        # plot__single_technique(gen_methods, datasets, imb_method, metrics, techniques, input)
-        plot__results(gen_methods, datasets, imb_method, metrics, techniques, input)
+    for imb_method in imb_methods:
+            for input in inputs:
+                # plot__single_technique(gen_methods, datasets, imb_method, metrics, techniques, input)
+                plot__results(gen_methods, datasets, imb_method, metrics, techniques, input)

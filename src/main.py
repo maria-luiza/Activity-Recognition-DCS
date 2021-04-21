@@ -63,7 +63,7 @@ def process_generation(args):
 
     # Generation method
     baseP = Perceptron(max_iter=1000, n_jobs=-1)
-    baseD = DecisionTreeClassifier(class_weight="balanced")
+    baseD = DecisionTreeClassifier()
     n_estimators = 100
 
     return gen_ensemble(X_train, y_train, gen_method, baseP, n_estimators)

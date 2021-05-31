@@ -221,12 +221,12 @@ if __name__ == '__main__':
 
     baseline = [RandomForestClassifier]
 
-    inputs = ["Dynamic", "Static"]
+    inputs = ["Static"]
 
     # Prototype Selection Methods
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
     # Generation Methods
-    gen_methods = [SGH, BaggingClassifier, AdaBoostClassifier]
+    gen_methods = [AdaBoostClassifier]
     # Dynamic Selection Techniques
 
     ds_methods_dcs = [OLA, LCA, MCB, Rank]
@@ -240,21 +240,22 @@ if __name__ == '__main__':
         datasets = list_directory(path_datasets)
 
         for iteration, dataset in enumerate(datasets):
-            if not dataset.startswith('.'):
+            if "hh125" in dataset:
                 print('\n\n~~ Database : ' + dataset + ' ~~')
                 path = input + "/" + dataset
                 folds_list, activities, examples_by_class = load_dataset(path)
 
-                for noise in range(0, 6):
+                for noise in range(2, 6):
                     print('== Noise Parameter --> ' + str(noise) + '0% ==\n')
                     parameters = experiment_parameters(folds_list, noise, examples_by_class)
                     for gen_method in gen_methods:
                         print('** Gen Method: %s' % (str(gen_method).split('.')[-1].split('\'')[0]))
                         # pool of classifiers
                         pool_clf = experiment_generation(parameters, gen_method, None)
+
                         # Save pool
                         gen_name = str(gen_method).split('.')[-1].split('\'')[0]
-                        save_experiment("generation", gen_name, dataset, str(noise), pool_clf)
+                        # save_experiment("generation", gen_name, dataset, str(noise), pool_clf)
 
                         # pool_clf = load_experiment("generation", gen_name, dataset, str(noise))
 

@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import pickle
 from matplotlib.backends.backend_pdf import PdfPages
+from sklearn.utils import resample
 
 # Metrics for evaluation
 from sklearn.calibration import CalibratedClassifierCV
@@ -106,12 +107,19 @@ def save_pdf(plot, path, name):
 
 
 def gen_ensemble(X_train, y_train, gen_method, base, n_estimators):
+    method_name = str(gen_method).split('.')[-1].split('\'')[0]
+
     # Base Classifier - Perceptron, Decision Tree, etc.
     baseClassifier = base
 
     base_clf = CalibratedClassifierCV(baseClassifier)
     # Generation technique used to create the pool
-    pool_clf = gen_method(base_clf, n_estimators=n_estimators)
+    if "Bagging" in method_name:
+        pool_clf = gen_method(base_clf, n_estimators=n_estimators, bootstrap=False)
+        X_train, y_train = resample(X_train, y_train, random_state=0, n_samples=(2*(len(y_train)//3)))
+    else:
+        pool_clf = gen_method(base_clf, n_estimators=n_estimators)
+
     # Train the classifiers in the pool
     pool_clf.fit(X_train, y_train)
 
@@ -119,8 +127,13 @@ def gen_ensemble(X_train, y_train, gen_method, base, n_estimators):
 
 
 def ds_ensemble(X_train, y_train, pool_clf, dyn_sel_method):
+    method_name = str(dyn_sel_method).split('.')[-1].split('\'')[0]
     # Dynamic Selection method
-    ds_met = dyn_sel_method(pool_clf)
+    if method_name in ["OLA", "LCA", "MCB", "RANK"]:
+        ds_met = dyn_sel_method(pool_clf, knn_classifier="faiss")
+    else:
+        ds_met = dyn_sel_method(pool_clf)
+
     # Train with DSel = Dtrain
     ds_met.fit(X_train, y_train)
 

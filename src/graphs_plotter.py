@@ -1,6 +1,5 @@
 import itertools
 import matplotlib.pyplot as plt
-from folder_utils import *
 from read_results import *
 
 from Orange.evaluation import compute_CD, graph_ranks

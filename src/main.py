@@ -226,7 +226,7 @@ if __name__ == '__main__':
     # Prototype Selection Methods
     imb_methods = [SMOTE, RandomOverSampler, RandomUnderSampler, InstanceHardnessThreshold]
     # Generation Methods
-    gen_methods = [AdaBoostClassifier]
+    gen_methods = [SGH]
     # Dynamic Selection Techniques
 
     ds_methods_dcs = [OLA, LCA, MCB, Rank]
